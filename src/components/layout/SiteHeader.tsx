@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BriefcaseBusiness, Globe, Menu, Search, UserCircle2, X } from "lucide-react";
 import { useLocale } from "@/features/i18n/LocaleContext";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -16,6 +16,7 @@ export function SiteHeader() {
   const { country, currency, dictionary, locale, setCountry } = useLocale();
   const { user, isLoading, isResolvingAccount, accountHref, isAdmin, signOut } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -84,7 +85,14 @@ export function SiteHeader() {
       <div className="mx-auto flex min-h-[4.75rem] max-w-[1440px] items-center justify-between gap-4 px-4 py-1 sm:px-6 lg:px-8 xl:gap-6">
         <Link
           href="/"
-          onClick={closeMobileMenu}
+          onClick={(event) => {
+            closeMobileMenu();
+            if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+              event.preventDefault();
+              if (pathname === "/") router.refresh();
+              else router.push("/");
+            }
+          }}
           aria-label={dictionary.brand.name}
           className="shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
         >
