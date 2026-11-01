@@ -18,6 +18,10 @@ export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const brandTagline =
+    locale === "es-AR"
+      ? "Siempre un profesional cerca de vos"
+      : "Sempre um profissional perto de você";
 
   const navItems = [
     { href: "/profissionais", label: dictionary.nav.professionals },
@@ -93,7 +97,7 @@ export function SiteHeader() {
               else router.push("/");
             }
           }}
-          aria-label={`${dictionary.brand.name} — Sempre um profissional perto de você`}
+          aria-label={`${dictionary.brand.name} — ${brandTagline}`}
           className="flex min-w-0 flex-1 items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] sm:gap-3 xl:flex-none"
         >
           <ManosProLogo variant="light-on-dark" size="md" />
@@ -103,7 +107,7 @@ export function SiteHeader() {
               <span className="text-[#F28C28]">Pro</span>
             </span>
             <span className="max-w-[125px] text-[9px] font-normal leading-tight text-[#C4BEB4] sm:max-w-none sm:whitespace-nowrap sm:text-xs">
-              Sempre um profissional perto de você
+              {brandTagline}
             </span>
           </span>
         </Link>
