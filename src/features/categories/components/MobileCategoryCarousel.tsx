@@ -1,11 +1,10 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
-import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { ServiceCategory } from "@/types/domain";
 import { useLocale } from "@/features/i18n/LocaleContext";
-import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { CategoryCard } from "./CategoryCard";
 
 const subscribeToMotionPreference = (callback: () => void) => {
   const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -41,7 +40,10 @@ export function MobileCategoryCarousel({ categories }: { categories: ServiceCate
   const handleScroll = () => {
     const track = trackRef.current;
     if (!track || track.clientWidth === 0) return;
-    const nextIndex = Math.round(track.scrollLeft / track.clientWidth);
+    const slide = track.querySelector<HTMLElement>("[data-category-slide]");
+    const slideWidth = slide?.getBoundingClientRect().width ?? track.clientWidth;
+    const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
+    const nextIndex = Math.round(track.scrollLeft / (slideWidth + gap));
     setActiveIndex(Math.min(categories.length - 1, Math.max(0, nextIndex)));
   };
 
@@ -63,35 +65,20 @@ export function MobileCategoryCarousel({ categories }: { categories: ServiceCate
         }}
         tabIndex={0}
         aria-label={locale === "es-AR" ? "Categorías de servicios" : "Categorias de serviços"}
-        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
-        style={{ scrollBehavior: reducedMotion ? "auto" : "smooth", scrollbarWidth: "none" }}
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] [&::-webkit-scrollbar]:hidden"
+        style={{ scrollBehavior: reducedMotion ? "auto" : "smooth", scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {categories.map((category, index) => (
-          <Link
+          <div
             key={category.id}
-            href={`/categorias/${category.slug}`}
-            onFocus={() => setActiveIndex(index)}
-            className="group relative flex min-h-[15.5rem] w-full shrink-0 snap-center flex-col justify-between overflow-hidden rounded-2xl border border-[#41685C] bg-[#183F35] p-5 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] focus-visible:ring-offset-2"
+            data-category-slide
+            onFocusCapture={() => setActiveIndex(index)}
+            className="w-full min-w-0 shrink-0 snap-start"
             aria-roledescription="slide"
-            aria-label={`${index + 1} de ${categories.length}: ${tText(category.name)}. ${tText(category.shortDescription)}`}
+            aria-label={`${index + 1} de ${categories.length}`}
           >
-            <span aria-hidden="true" className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#F28C28]/15 blur-2xl" />
-            <span aria-hidden="true" className="absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
-            <div className="relative flex items-start justify-between gap-4">
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/15 bg-white/10 text-[#FFB15C]">
-                <CategoryIcon name={category.iconName} className="h-6 w-6" />
-              </span>
-              <ArrowUpRight className="mt-1 h-5 w-5 text-white/70 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
-            </div>
-            <div className="relative mt-6">
-              <h3 className="text-xl font-extrabold leading-tight tracking-tight text-white">
-                {tText(category.name)}
-              </h3>
-              <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/80">
-                {tText(category.shortDescription)}
-              </p>
-            </div>
-          </Link>
+            <CategoryCard category={category} />
+          </div>
         ))}
       </div>
 
