@@ -93,10 +93,19 @@ export function SiteHeader() {
               else router.push("/");
             }
           }}
-          aria-label={dictionary.brand.name}
-          className="shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
+          aria-label={`${dictionary.brand.name} — Sempre um profissional perto de você`}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] sm:gap-3 xl:flex-none"
         >
           <ManosProLogo variant="light-on-dark" size="md" />
+          <span className="flex min-w-0 flex-col justify-center gap-1">
+            <span className="whitespace-nowrap text-lg font-bold leading-none tracking-tight sm:text-xl xl:text-2xl">
+              <span className="text-white">Manos</span>
+              <span className="text-[#F28C28]">Pro</span>
+            </span>
+            <span className="max-w-[125px] text-[9px] font-normal leading-tight text-[#C4BEB4] sm:max-w-none sm:whitespace-nowrap sm:text-xs">
+              Sempre um profissional perto de você
+            </span>
+          </span>
         </Link>
 
         <nav
