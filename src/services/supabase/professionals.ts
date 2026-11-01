@@ -6,6 +6,18 @@ import type {
   ServiceCategory,
 } from "@/types/domain";
 
+// Contas fictícias criadas pela migração 004 antiga. Mantidas no banco para
+// preservar dados; excluídas das consultas públicas até uma revisão aprovada.
+const RETIRED_SAMPLE_USER_IDS = [
+  "a1111111-1111-1111-1111-111111111111",
+  "a2222222-2222-2222-2222-222222222222",
+  "a3333333-3333-3333-3333-333333333333",
+  "a4444444-4444-4444-4444-444444444444",
+  "a5555555-5555-5555-5555-555555555555",
+  "a6666666-6666-6666-6666-666666666666",
+  "a7777777-7777-7777-7777-777777777777",
+].join(",");
+
 export interface RealReviewSummary {
   id: string;
   rating: number;
@@ -215,7 +227,6 @@ export async function fetchRealCategories(): Promise<ServiceCategory[]> {
       "pt-BR": row.examples_pt_br ?? [],
     },
     subcategories: [],
-    demoProfessionalCount: { AR: 0, BR: 0 },
   }));
 }
 
@@ -257,7 +268,6 @@ export async function fetchRealCategoryBySlug(
       "pt-BR": row.examples_pt_br ?? [],
     },
     subcategories: [],
-    demoProfessionalCount: { AR: 0, BR: 0 },
   };
 }
 
@@ -384,7 +394,8 @@ export async function searchRealProfessionals(
       { count: "exact" }
     )
     .eq("status", "published")
-    .eq("profiles.is_suspended", false);
+    .eq("profiles.is_suspended", false)
+    .not("user_id", "in", `(${RETIRED_SAMPLE_USER_IDS})`);
 
   if (filters.categorySlug && filters.categorySlug !== "all") {
     queryBuilder = queryBuilder.eq("category_slug", filters.categorySlug);
@@ -499,6 +510,7 @@ export async function fetchRealProfessionalBySlug(
     `
     )
     .eq("slug", slug)
+    .not("user_id", "in", `(${RETIRED_SAMPLE_USER_IDS})`)
     .maybeSingle();
 
   if (error) {

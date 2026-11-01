@@ -23,7 +23,6 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "sub-durlock", name: { "es-AR": "Construcción en seco y yesería", "pt-BR": "Gesso e Drywall" } },
       { id: "sub-pisos", name: { "es-AR": "Colocación de pisos y porcelanatos", "pt-BR": "Pisos e porcelanatos" } },
     ],
-    demoProfessionalCount: { AR: 18, BR: 14 },
   },
   {
     id: "cat-hogar",
@@ -46,7 +45,6 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "sub-carpinteria", name: { "es-AR": "Carpintería a medida", "pt-BR": "Marcenaria sob medida" } },
       { id: "sub-cerrajeria", name: { "es-AR": "Cerrajería y herrajes", "pt-BR": "Chaveiro e fechaduras" } },
     ],
-    demoProfessionalCount: { AR: 24, BR: 19 },
   },
   {
     id: "cat-electricidad-y-gas",
@@ -69,7 +67,6 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "sub-gas", name: { "es-AR": "Gasista matriculado y calefacción", "pt-BR": "Instalação e manutenção de gás" } },
       { id: "sub-climatizacion", name: { "es-AR": "Aires acondicionados", "pt-BR": "Climatização e Split" } },
     ],
-    demoProfessionalCount: { AR: 21, BR: 16 },
   },
   {
     id: "cat-belleza-y-bienestar",
@@ -92,7 +89,6 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "sub-manicura", name: { "es-AR": "Manicura y estética", "pt-BR": "Manicure e estética" } },
       { id: "sub-masajes", name: { "es-AR": "Masajes descontracturantes", "pt-BR": "Massoterapia e relaxamento" } },
     ],
-    demoProfessionalCount: { AR: 15, BR: 17 },
   },
   {
     id: "cat-jardineria",
@@ -115,7 +111,6 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "sub-poda", name: { "es-AR": "Poda y control fitosanitario", "pt-BR": "Poda e controle de pragas" } },
       { id: "sub-riego", name: { "es-AR": "Sistemas de riego y paisajismo", "pt-BR": "Irrigação e paisagismo" } },
     ],
-    demoProfessionalCount: { AR: 12, BR: 11 },
   },
   {
     id: "cat-transporte",
@@ -137,7 +132,6 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "sub-fletes", name: { "es-AR": "Fletes y minifletes", "pt-BR": "Fretes e pequenos carretos" } },
       { id: "sub-mudanzas", name: { "es-AR": "Mudanzas con embalaje", "pt-BR": "Mudanças com embalagem" } },
     ],
-    demoProfessionalCount: { AR: 14, BR: 12 },
   },
   {
     id: "cat-salud",
@@ -159,7 +153,6 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "sub-cuidados", name: { "es-AR": "Asistencia y cuidado domiciliario", "pt-BR": "Cuidado e assistência domiciliar" } },
       { id: "sub-rehabilitacion", name: { "es-AR": "Rehabilitación con matrícula vigente", "pt-BR": "Fisioterapia com registro ativo" } },
     ],
-    demoProfessionalCount: { AR: 9, BR: 10 },
   },
   {
     id: "cat-otros",
@@ -181,7 +174,6 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
       { id: "sub-tecnologia", name: { "es-AR": "Soporte técnico y redes Wi-Fi", "pt-BR": "Suporte técnico e redes Wi-Fi" } },
       { id: "sub-limpieza", name: { "es-AR": "Limpieza técnica de tapizados", "pt-BR": "Higienização de estofados" } },
     ],
-    demoProfessionalCount: { AR: 11, BR: 9 },
   },
 ];
 

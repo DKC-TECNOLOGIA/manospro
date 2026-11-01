@@ -3,112 +3,111 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Globe,
-  LayoutDashboard,
-  Menu,
-  ShieldAlert,
-  UserCircle2,
-  X,
-} from "lucide-react";
+import { BriefcaseBusiness, Globe, Menu, Search, UserCircle2, X } from "lucide-react";
 import { useLocale } from "@/features/i18n/LocaleContext";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { AccountMenu } from "@/features/auth/components/AccountMenu";
 import { ManosProLogo } from "@/components/ui/ManosProLogo";
 import { NotificationsBell } from "@/features/messaging/components/NotificationsBell";
 import { cn } from "@/lib/utils";
 import type { CountryCode } from "@/types/domain";
 
 export function SiteHeader() {
-  const { country, currency, dictionary, setCountry } = useLocale();
+  const { country, currency, dictionary, locale, setCountry } = useLocale();
+  const { user, isLoading, isResolvingAccount, accountHref, isAdmin, signOut } = useAuth();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { href: "/", label: dictionary.nav.home },
     { href: "/profissionais", label: dictionary.nav.professionals },
-    {
-      href: "/categorias/electricidad-y-gas",
-      label: dictionary.nav.categories,
-    },
+    { href: "/categorias/electricidad-y-gas", label: dictionary.nav.categories },
     { href: "/#como-funciona", label: dictionary.nav.howItWorks },
   ];
 
-  const areaPreviewLinks = [
-    { href: "/cliente", label: dictionary.nav.clientArea },
-    { href: "/profissional", label: dictionary.nav.proArea },
-    { href: "/admin", label: dictionary.nav.adminArea },
-  ];
+  const isNavItemActive = (href: string) =>
+    href.includes("#") ? pathname === "/" : pathname.startsWith(href);
 
   const handleRegionChange = (nextCountry: CountryCode) => {
     setCountry(nextCountry);
   };
 
-  return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#DED7CA] bg-[#F7F4EE]/95 backdrop-blur-md">
-      {/* Barra superior informativa de Fase 1 (Modo Demostración) */}
-      <div className="bg-[#24272B] px-4 py-2 text-[#F7F4EE]">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 text-xs">
-          <p className="flex items-center gap-2 font-medium text-[#E9E4DC]">
-            <ShieldAlert
-              className="h-3.5 w-3.5 shrink-0 text-[#F28C28]"
-              aria-hidden="true"
-            />
-            <span>{dictionary.brand.demoGlobalNotice}</span>
-          </p>
-          <div className="hidden items-center gap-3 lg:flex">
-            {areaPreviewLinks.map((area) => (
-              <Link
-                key={area.href}
-                href={area.href}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors",
-                  pathname === area.href
-                    ? "bg-[#F28C28] text-[#1B1E22]"
-                    : "text-[#D4CFC6] hover:bg-white/10 hover:text-white"
-                )}
-              >
-                <LayoutDashboard className="h-3 w-3" aria-hidden="true" />
-                {area.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
+  const renderRegionSelector = (compact = false) => (
+    <div
+      role="group"
+      aria-label={dictionary.nav.regionSelectorLabel}
+      className={cn(
+        "inline-flex items-center rounded-xl border border-[var(--mp-forest-border)] bg-[var(--mp-forest-deep)] p-1",
+        compact ? "gap-1" : "shadow-2xs"
+      )}
+    >
+      {!compact && (
+        <Globe
+          className="ml-2 mr-1.5 h-3.5 w-3.5 text-[var(--mp-muted-on-forest)]"
+          aria-hidden="true"
+        />
+      )}
+      <button
+        type="button"
+        onClick={() => handleRegionChange("AR")}
+        aria-pressed={country === "AR"}
+        className={cn(
+          "cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors",
+          country === "AR"
+            ? "bg-[var(--mp-forest-raised)] text-[var(--mp-on-forest)]"
+            : "text-[var(--mp-muted-on-forest)] hover:bg-white/10 hover:text-white"
+        )}
+      >
+        {compact ? "AR · ARS" : "AR · ES · ARS"}
+      </button>
+      <button
+        type="button"
+        onClick={() => handleRegionChange("BR")}
+        aria-pressed={country === "BR"}
+        className={cn(
+          "cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors",
+          country === "BR"
+            ? "bg-[var(--mp-forest-raised)] text-[var(--mp-on-forest)]"
+            : "text-[var(--mp-muted-on-forest)] hover:bg-white/10 hover:text-white"
+        )}
+      >
+        {compact ? "BR · BRL" : "BR · PT · BRL"}
+      </button>
+    </div>
+  );
 
-      {/* Navegación principal */}
-      <div className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  const accountPending = isLoading || (user !== null && isResolvingAccount);
+
+  return (
+    <header className="sticky top-0 z-40 w-full border-b border-[var(--mp-forest-border)] bg-[var(--mp-forest-deep)]/98 text-[var(--mp-on-forest)] shadow-[0_8px_24px_rgba(10,34,27,0.16)] backdrop-blur-md">
+      <div className="mx-auto flex min-h-[4.75rem] max-w-[1440px] items-center justify-between gap-4 px-4 py-1 sm:px-6 lg:px-8 xl:gap-6">
         <Link
           href="/"
-          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] rounded-xl"
+          onClick={closeMobileMenu}
+          aria-label={dictionary.brand.name}
+          className="shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
         >
-          <ManosProLogo
-            variant="dark-on-light"
-            size="md"
-            showSlogan
-            sloganText={dictionary.brand.slogan}
-          />
+          <ManosProLogo variant="light-on-dark" size="md" />
         </Link>
 
-        {/* Enlaces Desktop */}
         <nav
-          aria-label="Navegación principal"
-          className="hidden items-center gap-1 md:flex"
+          aria-label={locale === "es-AR" ? "Navegación principal" : "Navegação principal"}
+          className="hidden items-center gap-1 xl:flex"
         >
           {navItems.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href.split("#")[0] || item.href);
-
+            const isActive = isNavItemActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "rounded-xl px-3.5 py-2 text-sm font-medium transition-colors",
+                  "rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-[#EFEAE1] text-[#24272B] font-semibold"
-                    : "text-[#42474F] hover:bg-[#EFEAE1]/70 hover:text-[#24272B]"
+                    ? "bg-[var(--mp-forest-raised)]/70 font-semibold text-white ring-1 ring-white/12"
+                    : "text-[var(--mp-muted-on-forest)] hover:bg-white/8 hover:text-white"
                 )}
+                aria-current={isActive ? "page" : undefined}
               >
                 {item.label}
               </Link>
@@ -116,70 +115,54 @@ export function SiteHeader() {
           })}
         </nav>
 
-        {/* Selector Regional (AR/ARS vs BR/BRL) + Acceso a cuenta */}
-        <div className="hidden items-center gap-3 md:flex">
-          <div
-            role="group"
-            aria-label={dictionary.nav.regionSelectorLabel}
-            className="inline-flex items-center rounded-xl border border-[#D8D0C2] bg-white p-1 shadow-2xs"
-          >
-            <Globe
-              className="ml-2 mr-1.5 h-3.5 w-3.5 text-[#5A6068]"
-              aria-hidden="true"
-            />
-            <button
-              type="button"
-              onClick={() => handleRegionChange("AR")}
-              aria-pressed={country === "AR"}
-              className={cn(
-                "cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors",
-                country === "AR"
-                  ? "bg-[#24272B] text-[#F7F4EE]"
-                  : "text-[#4A5058] hover:bg-[#F7F4EE]"
-              )}
-            >
-              AR · ES · ARS
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRegionChange("BR")}
-              aria-pressed={country === "BR"}
-              className={cn(
-                "cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors",
-                country === "BR"
-                  ? "bg-[#24272B] text-[#F7F4EE]"
-                  : "text-[#4A5058] hover:bg-[#F7F4EE]"
-              )}
-            >
-              BR · PT · BRL
-            </button>
-          </div>
-
+        <div className="hidden items-center gap-2 xl:flex">
+          {renderRegionSelector()}
           <NotificationsBell />
-
+          {accountPending ? (
+            <span aria-hidden="true" className="h-10 w-28 animate-pulse rounded-xl bg-white/10" />
+          ) : user ? (
+            <AccountMenu
+              user={user}
+              dashboardHref={accountHref}
+              isAdmin={isAdmin}
+              onSignOut={signOut}
+            />
+          ) : (
+            <Link
+              href="/entrar"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-white/25 bg-white/5 px-3 text-sm font-medium text-white transition-colors hover:border-white/50 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
+            >
+              <UserCircle2 className="h-4 w-4 text-[var(--mp-muted-on-forest)]" aria-hidden="true" />
+              <span>{dictionary.nav.login}</span>
+            </Link>
+          )}
           <Link
-            href="/entrar"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#D5CEC2] bg-white px-3.5 text-sm font-medium text-[#24272B] transition-colors hover:border-[#24272B] hover:bg-[#F7F4EE]"
+            href="/profissionais"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-white/25 bg-white/5 px-3 text-sm font-semibold text-white transition-colors hover:border-white/50 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
           >
-            <UserCircle2 className="h-4 w-4 text-[#5A6068]" aria-hidden="true" />
-            <span>{dictionary.nav.login}</span>
+            <Search className="h-4 w-4" aria-hidden="true" />
+            <span>{dictionary.nav.findProfessional}</span>
           </Link>
-
           <Link
-            href="/cadastro"
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-[#F28C28] px-4 text-sm font-semibold text-[#1B1E22] shadow-xs transition-colors hover:bg-[#DF7B18]"
+            href="/cadastro?role=professional"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#F28C28] px-3.5 text-sm font-semibold text-[#1B1E22] transition-colors hover:bg-[#DF7B18] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mp-forest-deep)]"
           >
-            {dictionary.nav.registerAsPro}
+            <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+            <span>{dictionary.nav.registerAsPro}</span>
           </Link>
         </div>
 
-        {/* Botón Menú Móvil */}
         <button
           type="button"
-          onClick={() => setMobileMenuOpen((prev) => !prev)}
+          onClick={() => setMobileMenuOpen((open) => !open)}
           aria-expanded={mobileMenuOpen}
-          aria-label="Abrir menú de navegación"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#D8D0C2] bg-white text-[#24272B] md:hidden"
+          aria-controls="mobile-navigation"
+          aria-label={
+            mobileMenuOpen
+              ? locale === "es-AR" ? "Cerrar menú" : "Fechar menu"
+              : locale === "es-AR" ? "Abrir menú" : "Abrir menu"
+          }
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/5 text-white transition-colors hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] xl:hidden"
         >
           {mobileMenuOpen ? (
             <X className="h-5 w-5" aria-hidden="true" />
@@ -189,89 +172,77 @@ export function SiteHeader() {
         </button>
       </div>
 
-      {/* Panel Móvil Responsivo */}
       {mobileMenuOpen && (
-        <div className="border-t border-[#DED7CA] bg-[#F7F4EE] px-4 pt-3 pb-6 md:hidden">
-          <div className="mb-4 flex items-center justify-between rounded-xl border border-[#D8D0C2] bg-white p-2.5">
-            <span className="text-xs font-semibold text-[#4A5058]">
+        <div
+          id="mobile-navigation"
+          className="border-t border-[var(--mp-forest-border)] bg-[var(--mp-forest-deep)] px-4 pb-5 pt-4 text-[var(--mp-on-forest)] sm:px-6 xl:hidden"
+        >
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--mp-forest-border)] bg-white/5 p-2.5">
+            <span className="text-xs font-semibold text-[var(--mp-muted-on-forest)]">
               {dictionary.nav.regionSelectorLabel} ({currency})
             </span>
-            <div className="flex gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleRegionChange("AR")}
-                aria-pressed={country === "AR"}
-                className={cn(
-                  "rounded-lg px-2.5 py-1 text-xs font-semibold",
-                  country === "AR"
-                    ? "bg-[#24272B] text-[#F7F4EE]"
-                    : "bg-[#F7F4EE] text-[#24272B]"
-                )}
-              >
-                AR · ARS
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRegionChange("BR")}
-                aria-pressed={country === "BR"}
-                className={cn(
-                  "rounded-lg px-2.5 py-1 text-xs font-semibold",
-                  country === "BR"
-                    ? "bg-[#24272B] text-[#F7F4EE]"
-                    : "bg-[#F7F4EE] text-[#24272B]"
-                )}
-              >
-                BR · BRL
-              </button>
-            </div>
+            {renderRegionSelector(true)}
           </div>
 
-          <nav className="flex flex-col space-y-1">
+          <nav className="grid grid-cols-1 gap-1 sm:grid-cols-3">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl px-3 py-2.5 text-sm font-medium text-[#24272B] hover:bg-[#EFEAE1]"
+                onClick={closeMobileMenu}
+                className={cn(
+                  "rounded-xl px-3 py-3 text-sm font-medium text-[var(--mp-muted-on-forest)] transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]",
+                  isNavItemActive(item.href) &&
+                    "bg-[var(--mp-forest-raised)]/70 font-semibold text-white"
+                )}
+                aria-current={isNavItemActive(item.href) ? "page" : undefined}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
 
-          <div className="mt-4 border-t border-[#DED7CA] pt-3">
-            <p className="px-3 text-xs font-semibold text-[#666C75]">
-              Vistas previas estructurales (Fase 2 Auth)
-            </p>
-            <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-              {areaPreviewLinks.map((area) => (
-                <Link
-                  key={area.href}
-                  href={area.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg border border-[#D8D0C2] bg-white px-2.5 py-2 text-center text-xs font-medium text-[#24272B]"
-                >
-                  {area.label}
-                </Link>
-              ))}
-            </div>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Link
+              href="/profissionais"
+              onClick={closeMobileMenu}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
+            >
+              <Search className="h-4 w-4" aria-hidden="true" />
+              {dictionary.nav.findProfessional}
+            </Link>
+            <Link
+              href="/cadastro?role=professional"
+              onClick={closeMobileMenu}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F28C28] px-4 py-3 text-sm font-semibold text-[#1B1E22] transition-colors hover:bg-[#DF7B18] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+              {dictionary.nav.registerAsPro}
+            </Link>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <Link
-              href="/entrar"
-              onClick={() => setMobileMenuOpen(false)}
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-[#D5CEC2] bg-white text-sm font-semibold text-[#24272B]"
-            >
-              {dictionary.nav.login}
-            </Link>
-            <Link
-              href="/cadastro"
-              onClick={() => setMobileMenuOpen(false)}
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#F28C28] text-sm font-semibold text-[#1B1E22]"
-            >
-              {dictionary.nav.register}
-            </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--mp-forest-border)] pt-3">
+            {accountPending ? (
+              <span aria-hidden="true" className="h-11 w-32 animate-pulse rounded-xl bg-white/10" />
+            ) : user ? (
+              <AccountMenu
+                user={user}
+                dashboardHref={accountHref}
+                isAdmin={isAdmin}
+                isMobile
+                onSignOut={signOut}
+                onNavigate={closeMobileMenu}
+              />
+            ) : (
+              <Link
+                href="/entrar"
+                onClick={closeMobileMenu}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-medium text-[var(--mp-muted-on-forest)] transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
+              >
+                <UserCircle2 className="h-4 w-4" aria-hidden="true" />
+                {dictionary.nav.login}
+              </Link>
+            )}
           </div>
         </div>
       )}

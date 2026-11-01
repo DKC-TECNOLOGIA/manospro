@@ -38,6 +38,7 @@ before update on public.moderation_reports
 for each row execute function public.handle_updated_at();
 
 alter table public.moderation_reports enable row level security;
+grant select, insert, update on public.moderation_reports to authenticated;
 
 -- Cualquier usuario autenticado no suspendido puede crear una denuncia real (como él mismo)
 drop policy if exists "Usuarios autenticados crean denuncias reales" on public.moderation_reports;
@@ -81,6 +82,7 @@ create table if not exists public.admin_audit_logs (
 );
 
 alter table public.admin_audit_logs enable row level security;
+grant select on public.admin_audit_logs to authenticated;
 
 -- Solo administradores activos pueden consultar el registro de auditoría
 drop policy if exists "Solo administradores leen auditoría" on public.admin_audit_logs;

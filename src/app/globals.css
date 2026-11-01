@@ -10,10 +10,27 @@
   --mp-surface: #ffffff;
   --mp-border: #dfd8cc;
   --mp-muted: #565c64;
+  --mp-forest: #183f35;
+  --mp-forest-deep: #14372f;
+  --mp-forest-raised: #245448;
+  --mp-forest-border: #41685c;
+  --mp-on-forest: #f7f4ee;
+  --mp-muted-on-forest: #c6d2cc;
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+@keyframes hero-banner-enter {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 body {

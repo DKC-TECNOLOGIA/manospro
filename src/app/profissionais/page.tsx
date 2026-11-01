@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
@@ -21,7 +22,6 @@ import {
 } from "@/services/supabase/professionals";
 import { ProfessionalCard } from "@/features/professionals/components/ProfessionalCard";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import type { CategorySlug, CountryCode, ServiceCategory } from "@/types/domain";
 
 const PAGE_SIZE = 6;
@@ -141,18 +141,13 @@ function DirectoryContent() {
       {/* Encabezado */}
       <div className="flex flex-col items-start justify-between gap-4 border-b border-[#DFD8CC] pb-6 md:flex-row md:items-end">
         <div>
-          <Badge variant="emerald" className="mb-2">
-            {locale === "es-AR"
-              ? "Búsqueda en tiempo real · Supabase PostgreSQL"
-              : "Busca em tempo real · Supabase PostgreSQL"}
-          </Badge>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#24272B]">
             {dictionary.directoryPage.title}
           </h1>
           <p className="mt-1.5 max-w-2xl text-sm text-[#525860]">
             {locale === "es-AR"
-              ? "Buscá por nombre, especialidad o servicio y filtrá por categoría, país y ciudad directamente en la base de datos."
-              : "Busque por nome, especialidade ou serviço e filtre por categoria, país e cidade diretamente no banco de dados."}
+              ? "Buscá profesionales por nombre, especialidad y zona para encontrar a la persona indicada para tu próximo trabajo."
+              : "Busque profissionais por nome, especialidade e região para encontrar a pessoa certa para o seu próximo serviço."}
           </p>
         </div>
       </div>
@@ -333,8 +328,8 @@ function DirectoryContent() {
           />
           <p className="mt-3 text-sm font-semibold text-[#24272B]">
             {locale === "es-AR"
-              ? "Consultando perfiles en Supabase..."
-              : "Consultando perfis no Supabase..."}
+              ? "Buscando profesionales..."
+              : "Buscando profissionais..."}
           </p>
         </div>
       )}
@@ -383,10 +378,16 @@ function DirectoryContent() {
             <p className="mx-auto mt-1.5 max-w-md text-sm text-[#525860]">
               {dictionary.directoryPage.emptyDescription}
             </p>
-            <div className="mt-5">
+            <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
               <Button variant="primary" onClick={handleResetFilters}>
                 {dictionary.directoryPage.clearFilters}
               </Button>
+              <Link
+                href="/cadastro?role=professional"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#D4CCC0] px-5 text-sm font-bold text-[#24272B] transition hover:border-[#F28C28] hover:text-[#C86D14]"
+              >
+                {dictionary.directoryPage.professionalCta}
+              </Link>
             </div>
           </div>
         ) : (

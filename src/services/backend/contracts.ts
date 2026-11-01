@@ -3,9 +3,12 @@ import type {
   CategorySlug,
   CountryCode,
   ProfessionalFilterParams,
-  ProfessionalProfile,
   ServiceCategory,
 } from "@/types/domain";
+import type {
+  RealProfessionalDetail,
+  RealProfessionalListItem,
+} from "@/services/supabase/professionals";
 
 /**
  * Contratos de acceso a datos preparados para la Fase 2 (Supabase PostgreSQL + Auth + RLS + Storage).
@@ -26,9 +29,9 @@ export interface AuthSessionSummary {
 }
 
 export interface ProfessionalsRepositoryContract {
-  listProfessionals(params: ProfessionalFilterParams): Promise<ProfessionalProfile[]>;
-  getProfessionalBySlug(slug: string): Promise<ProfessionalProfile | null>;
-  listByCategory(categorySlug: CategorySlug): Promise<ProfessionalProfile[]>;
+  listProfessionals(params: ProfessionalFilterParams): Promise<RealProfessionalListItem[]>;
+  getProfessionalBySlug(slug: string): Promise<RealProfessionalDetail | null>;
+  listByCategory(categorySlug: CategorySlug): Promise<RealProfessionalListItem[]>;
 }
 
 export interface CategoriesRepositoryContract {

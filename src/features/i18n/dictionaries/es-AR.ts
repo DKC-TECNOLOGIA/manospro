@@ -1,11 +1,6 @@
 export const esARDictionary = {
   brand: {
     name: "ManosPro",
-    slogan: "Profesionales cerca de vos",
-    demoGlobalNotice:
-      "Modo demostración (Fase 1): Los perfiles, calificaciones y valores de referencia exhibidos son ejemplos ilustrativos de interfaz. No representan cuentas verificadas ni disponibilidad en tiempo real.",
-    demoBadge: "Perfil de demostración",
-    sampleDataBadge: "Datos ilustrativos",
   },
   nav: {
     home: "Inicio",
@@ -18,27 +13,40 @@ export const esARDictionary = {
     login: "Ingresar",
     register: "Crear cuenta",
     registerAsPro: "Ofrecé tus servicios",
+    findProfessional: "Buscar profesionales",
     regionSelectorLabel: "País, idioma y moneda",
   },
   hero: {
-    badge: "Argentina y Brasil · Conexión directa y presupuestos claros",
-    title: "Profesionales cerca de vos para resolver cada proyecto con confianza",
+    badge: "Argentina y Brasil · Servicios para tu hogar y tu oficio",
+    title: "Encontrá profesionales. Conseguí nuevos clientes.",
     subtitle:
-      "Buscá especialistas en plomería, electricidad, construcción, jardín y servicios para el hogar. Consultá perfiles detallados, conversá sin intermediarios y pedí presupuestos en tu moneda local.",
+      "Si necesitás resolver un trabajo, buscá por oficio y zona. Si ofrecés servicios, creá tu perfil y mostrá tu trabajo a personas de tu área.",
     searchProfessionLabel: "¿Qué oficio o servicio buscás?",
     searchProfessionPlaceholder: "Ej: Gasista matriculado, plomero, pintor, electricista...",
     searchZoneLabel: "Ciudad o barrio",
     searchZoneAll: "Todas las zonas disponibles",
     searchCategoryLabel: "Rubro principal",
     searchCategoryAll: "Todas las categorías",
-    searchSubmit: "Buscar profesionales",
-    quickPopularLabel: "Búsquedas frecuentes:",
-    trustPoint1Title: "Contacto directo o presupuesto",
-    trustPoint1Desc: "Coordiná por mensaje directo o describí tu necesidad para recibir propuestas.",
-    trustPoint2Title: "Referencias y galería de oficios",
-    trustPoint2Desc: "Revisá fotos de trabajos realizados, zonas de cobertura e idiomas.",
-    trustPoint3Title: "Transparencia en tu moneda",
-    trustPoint3Desc: "Valores orientativos expresados en Pesos Argentinos (ARS) o Reales (BRL).",
+    searchSubmit: "Encontrar profesionales",
+    quickPopularLabel: "Buscá por servicio:",
+    clientCtaTitle: "Necesito contratar",
+    clientCtaDescription:
+      "Buscá por trabajo y zona, revisá los perfiles disponibles y pedí un presupuesto.",
+    clientCtaLabel: "Ver profesionales",
+    professionalCtaTitle: "Quiero ofrecer mis servicios",
+    professionalCtaDescription:
+      "Creá tu perfil, agregá tus especialidades y mostrá fotos de tus trabajos.",
+    professionalCtaLabel: "Crear perfil profesional",
+    clientBannerEyebrow: "Para clientes",
+    clientBannerTitle: "Encontrá profesionales para lo que necesitás.",
+    clientBannerSubtitle:
+      "Explorá por oficio y zona, conocé sus perfiles y contactá a quien mejor se ajuste a tu trabajo.",
+    clientBannerCta: "Encontrar profesionales",
+    professionalBannerEyebrow: "Para profesionales",
+    professionalBannerTitle: "Tu talento merece más oportunidades.",
+    professionalBannerSubtitle:
+      "Registrate gratis, mostrá tus servicios y conectá con nuevos clientes.",
+    professionalBannerCta: "Crear perfil profesional",
   },
   categoriesSection: {
     title: "Explorá por categoría de servicio",
@@ -47,17 +55,19 @@ export const esARDictionary = {
     viewAllProfessionals: "Ver directorio completo",
     exploreCategory: "Ver especialistas",
     examplesLabel: "Especialidades incluidas:",
-    demoCountSuffix: "perfiles de ejemplo",
   },
   featuredSection: {
-    title: "Perfiles destacados en modo demostración",
+    title: "Profesionales publicados",
     subtitle:
-      "Conocé cómo se estructuran las fichas de especialistas en ManosPro: servicios detallados, áreas de cobertura y modelos de contratación.",
-    demoDisclaimer:
-      "Importante: Estos perfiles son muestras de diseño para la Fase 1. Las calificaciones, matrículas y precios son estrictamente demostrativos.",
-    viewFullDirectory: "Explorar todos los perfiles",
-    filterByCurrentCountry: "Mostrando ejemplos para",
-    showAllCountries: "Ver Argentina + Brasil",
+      "Consultá perfiles de trabajadores que publicaron sus servicios en ManosPro.",
+    viewFullDirectory: "Ver todos los profesionales",
+    filterByCurrentCountry: "Ver profesionales de",
+    showAllCountries: "Ver Argentina y Brasil",
+    emptyTitle: "Todavía no hay profesionales publicados en esta zona",
+    emptyDescription:
+      "Ampliá la búsqueda a otras zonas o publicá tu servicio para que nuevos clientes puedan encontrarte.",
+    emptyProCta: "Ofrecer mis servicios",
+    emptyClientCta: "Buscar en todas las zonas",
   },
   howItWorksSection: {
     title: "Cómo funciona ManosPro",
@@ -94,7 +104,7 @@ export const esARDictionary = {
   directoryPage: {
     title: "Directorio de profesionales",
     subtitle:
-      "Explorá perfiles de demostración filtrando por oficio, categoría, país/zona y modalidad de atención.",
+      "Buscá profesionales por oficio, categoría y zona de atención.",
     searchInputLabel: "Buscar por nombre, oficio o palabra clave",
     searchInputPlaceholder: "Ej: instalación eléctrica, pintura, plomería, Martín...",
     categoryFilterLabel: "Categoría",
@@ -102,23 +112,20 @@ export const esARDictionary = {
     zoneFilterLabel: "Ciudad / Zona",
     sortByLabel: "Ordenar por",
     sortRelevance: "Relevancia en la plataforma",
-    sortRating: "Mayor calificación de muestra",
+    sortRating: "Mejor valorados por clientes",
     sortExperience: "Mayor antigüedad de oficio",
     clearFilters: "Limpiar filtros",
-    resultsCount: "perfiles encontrados (datos de demostración)",
+    resultsCount: "profesionales encontrados",
     emptyTitle: "No encontramos perfiles con esos filtros",
     emptyDescription:
-      "Probá limpiar la búsqueda o cambiar la categoría y zona para explorar otros perfiles de demostración.",
-    simulateLoadingBtn: "Probar estado de carga",
-    simulateErrorBtn: "Probar estado de error",
+      "Quitá algún filtro o ampliá la zona para ver más resultados. Si ofrecés servicios, podés crear tu perfil profesional.",
     errorTitle: "No se pudo actualizar el listado",
     errorDescription:
-      "Ocurrió un inconveniente simulado al consultar el directorio. Reintentá para restablecer la vista.",
+      "No pudimos actualizar los resultados. Revisá tu conexión e intentá de nuevo.",
+    professionalCta: "Ofrecer mis servicios",
     retryBtn: "Reintentar carga",
   },
   profileCard: {
-    demoTag: "Muestra Fase 1",
-    sampleRatingNote: "calificación de ejemplo",
     experienceYears: "años de oficio",
     referenceFrom: "Referencia desde",
     referenceOnQuote: "Presupuesto a convenir",
@@ -129,17 +136,14 @@ export const esARDictionary = {
   },
   profileDetail: {
     backToDirectory: "Volver al directorio",
-    demoBannerTitle: "Ficha de demostración (Fase 1 — Sin datos reales)",
-    demoBannerText:
-      "Este perfil ilustra la arquitectura visual del producto. La identidad, matrícula, reseñas y valores no pertenecen a un prestador real ni implican verificación activa.",
     aboutTitle: "Presentación y experiencia",
     servicesTitle: "Servicios y valores de referencia",
     servicesNote:
       "Los importes son orientativos en moneda local y están sujetos a visita técnica o alcance del trabajo.",
-    portfolioTitle: "Galería de trabajos anteriores (Ilustrativa)",
-    reviewsTitle: "Reseñas de ejemplo",
+    portfolioTitle: "Galería de trabajos anteriores",
+    reviewsTitle: "Reseñas de clientes",
     reviewsDisclaimer:
-      "En la versión conectada a Supabase, el promedio se calculará exclusivamente sobre reseñas de contrataciones reales con control de duplicidad.",
+      "Las reseñas publicadas se muestran en el perfil de cada profesional.",
     sidebarContactTitle: "Contactar o pedir presupuesto",
     sidebarAvailabilityLabel: "Disponibilidad habitual",
     sidebarZonesLabel: "Zonas de cobertura",
@@ -148,7 +152,7 @@ export const esARDictionary = {
     actionSendMessage: "Enviar mensaje directo",
     actionRequestQuote: "Solicitar presupuesto",
     actionSaveFavorite: "Guardar en favoritos",
-    actionSavedFavorite: "Guardado en favoritos (Demo)",
+    actionSavedFavorite: "Guardado en favoritos",
     phase2ModalTitle: "Acción programada para Fase 2 (Integración Supabase)",
     phase2ModalDesc:
       "El envío de mensajes persistentes, las solicitudes de presupuesto reales y el guardado de favoritos entre sesiones se activarán al conectar Supabase Auth y PostgreSQL con políticas RLS.",
@@ -165,8 +169,8 @@ export const esARDictionary = {
     emailPlaceholder: "nombre@ejemplo.com",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Ingresá tu contraseña (mín. 8 caracteres)",
-    loginSubmit: "Ingresar (Simulación Fase 1)",
-    forgotPassword: "¿Olvidaste tu contraseña? (Disponible en Fase 2)",
+    loginSubmit: "Ingresar",
+    forgotPassword: "¿Olvidaste tu contraseña?",
     noAccountText: "¿Todavía no tenés cuenta?",
     goToRegister: "Crear cuenta gratis",
     registerTitle: "Creá tu cuenta en ManosPro",
@@ -182,7 +186,7 @@ export const esARDictionary = {
     countryLabel: "País de operación",
     cityLabel: "Ciudad o zona principal",
     specialtyLabel: "Oficio o categoría principal",
-    registerSubmit: "Continuar con el registro (Demo Fase 1)",
+    registerSubmit: "Crear cuenta",
     alreadyHaveAccount: "¿Ya tenés cuenta en ManosPro?",
   },
   privateAreas: {
@@ -201,14 +205,14 @@ export const esARDictionary = {
   },
   footer: {
     description:
-      "Plataforma para conectar clientes con profesionales autónomos en Argentina y Brasil. Diseño preparado para web responsiva y futura aplicación móvil con React Native + Expo.",
+      "ManosPro conecta a personas que necesitan un servicio con profesionales independientes de Argentina y Brasil.",
     navigationTitle: "Explorar",
-    areasTitle: "Áreas de la plataforma",
-    legalTitle: "Seguridad y transparencia",
+    areasTitle: "Para cada necesidad",
+    legalTitle: "Información clara",
     privacyLink: "Privacidad y datos personales",
     termsLink: "Términos de uso",
     verificationPolicy: "Política de verificación real",
-    copyright: "ManosPro · Fase 1: Fundación del Proyecto y Design System.",
+    copyright: "ManosPro · Argentina y Brasil",
   },
 };
 

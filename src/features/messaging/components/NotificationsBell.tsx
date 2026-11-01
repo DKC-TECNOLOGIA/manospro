@@ -120,9 +120,9 @@ export function NotificationsBell() {
         aria-label={
           locale === "es-AR" ? "Ver notificaciones" : "Ver notificações"
         }
-        className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-[#D5CEC2] bg-white text-[#24272B] transition-colors hover:border-[#24272B]"
+        className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-white/25 bg-white/5 text-white transition-colors hover:border-white/50 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
       >
-        <Bell className="h-4 w-4 text-[#24272B]" />
+        <Bell className="h-4 w-4 text-white" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F28C28] px-1 font-mono text-[10px] font-bold text-[#1B1E22]">
             {unreadCount}
