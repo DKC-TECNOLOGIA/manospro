@@ -346,6 +346,91 @@ export default function ProfessionalWorkspacePage() {
 
   const isBlocked = isAccountSuspended || proProfileStatus === "suspended";
   const canPublish = !isBlocked && verificationStatus === "verified";
+  const needsPublication = canPublish && proProfileStatus !== "published";
+
+  const handleQuickPublish = async () => {
+    if (!canPublish || isSavingProfile) return;
+    setProfileFeedback(null);
+
+    if (fullName.trim().length < 3 || primarySpecialtyEs.trim().length < 3) {
+      setProfileFeedback({
+        type: "error",
+        message:
+          locale === "es-AR"
+            ? "Completá tu nombre público y tu especialidad principal antes de publicar."
+            : "Preencha seu nome público e sua especialidade principal antes de publicar.",
+      });
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      const secondaryList = secondarySpecialtiesInput
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const zonesList = coverageZonesInput
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const langsList = languagesInput
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const parsedPrice = referenceStartingPrice.trim()
+        ? Number(referenceStartingPrice)
+        : null;
+
+      const saved = await saveOwnProfessionalProfile({
+        fullName,
+        country: proCountry,
+        city: city || regionalCities[0]?.city || "Buenos Aires (CABA)",
+        avatarUrl: avatarUrl.trim() || null,
+        slug:
+          slug.trim() ||
+          `${fullName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        categorySlug,
+        primarySpecialtyEsAr: primarySpecialtyEs,
+        primarySpecialtyPtBr: primarySpecialtyPt || primarySpecialtyEs,
+        secondarySpecialties: secondaryList,
+        bio,
+        yearsOfExperience: Number(yearsOfExperience) || 0,
+        neighborhood,
+        coverageZones: zonesList,
+        languages: langsList,
+        scheduleSummary,
+        acceptsDirectContact,
+        acceptsQuoteRequests,
+        referenceStartingPrice: parsedPrice,
+        status: "published",
+        locale,
+      });
+
+      setSlug(saved.slug);
+      setHasProfessionalProfile(true);
+      setStatus("published");
+      setProProfileStatus("published");
+      setProfileFeedback({
+        type: "success",
+        message:
+          locale === "es-AR"
+            ? "¡Tu perfil fue publicado y ya aparece en el directorio público!"
+            : "Seu perfil foi publicado e já aparece no diretório público!",
+      });
+    } catch (err) {
+      setProfileFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : locale === "es-AR"
+              ? "No se pudo publicar el perfil."
+              : "Não foi possível publicar o perfil.",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleRequestVerification = async (
     e: React.FormEvent<HTMLFormElement>
@@ -813,9 +898,13 @@ export default function ProfessionalWorkspacePage() {
                       ? "Tu cuenta o ficha profesional se encuentra suspendida. Las acciones de edición, verificación y cambio de rol están deshabilitadas."
                       : "Sua conta ou ficha profissional está suspensa. As ações de edição, verificação e troca de papel estão desabilitadas."
                     : verificationStatus === "verified"
-                      ? locale === "es-AR"
-                        ? "Tu identidad y matrícula fueron aprobadas. Ya podés publicar tu ficha en el directorio."
-                        : "Sua verificação foi aprovada. Você já pode publicar seu perfil no diretório."
+                      ? needsPublication
+                        ? locale === "es-AR"
+                          ? "Tu verificación fue aprobada, pero tu ficha sigue en borrador (oculta en el directorio). Publicá ahora para aparecer en las búsquedas."
+                          : "Sua verificação foi aprovada, mas seu perfil ainda está em rascunho (oculto no diretório). Publique agora para aparecer nas buscas."
+                        : locale === "es-AR"
+                          ? "Tu ficha está verificada y publicada en el directorio público."
+                          : "Seu perfil está verificado e publicado no diretório público."
                       : verificationStatus === "pending"
                         ? locale === "es-AR"
                           ? "Recibimos tu solicitud de verificación. Mientras esté en análisis, tu ficha permanecerá en borrador."
@@ -824,6 +913,21 @@ export default function ProfessionalWorkspacePage() {
                           ? "Guardá tu perfil en borrador y enviá tus datos de verificación abajo para poder publicarlo en el directorio."
                           : "Salve seu perfil em rascunho e envie seus dados de verificação abaixo para liberar a publicação no diretório."}
                 </p>
+                {needsPublication && (
+                  <div className="mt-3">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      isLoading={isSavingProfile}
+                      onClick={() => void handleQuickPublish()}
+                    >
+                      {locale === "es-AR"
+                        ? "Publicar perfil en el directorio ahora"
+                        : "Publicar perfil no diretório agora"}
+                    </Button>
+                  </div>
+                )}
               </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-5">

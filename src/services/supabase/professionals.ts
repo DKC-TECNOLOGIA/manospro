@@ -394,6 +394,7 @@ export async function searchRealProfessionals(
       { count: "exact" }
     )
     .eq("status", "published")
+    .eq("verification_status", "verified")
     .eq("profiles.is_suspended", false)
     .not("user_id", "in", `(${RETIRED_SAMPLE_USER_IDS})`);
 
@@ -510,6 +511,9 @@ export async function fetchRealProfessionalBySlug(
     `
     )
     .eq("slug", slug)
+    .eq("status", "published")
+    .eq("verification_status", "verified")
+    .eq("profiles.is_suspended", false)
     .not("user_id", "in", `(${RETIRED_SAMPLE_USER_IDS})`)
     .maybeSingle();
 

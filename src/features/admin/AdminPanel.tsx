@@ -181,7 +181,9 @@ export function AdminPanel({ initialData }: { initialData: AdminPanelData }) {
         decision_note: note.trim(),
       });
       if (error) throw error;
-    }, `Verificação ${approve ? "aprovada" : "recusada"} e decisão auditada.`);
+    }, approve
+      ? "Verificação aprovada e auditada. O profissional já pode publicar o perfil no diretório em /profissional."
+      : "Verificação recusada e decisão auditada.");
   };
 
   const resolveReport = (report: Report, resolution: "resolved" | "dismissed") => {
