@@ -2,9 +2,11 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
+  Clock,
   ExternalLink,
   FileCheck2,
   Image as ImageIcon,
@@ -13,15 +15,21 @@ import {
   MessageSquare,
   Plus,
   Save,
+  ShieldAlert,
+  ShieldCheck,
   Trash2,
+  UserMinus,
   Wrench,
 } from "lucide-react";
 import { useLocale } from "@/features/i18n/LocaleContext";
 import { CITY_ZONES, formatRegionalCurrency } from "@/features/i18n/regions";
 import { createSupabaseBrowserClient } from "@/services/supabase/client";
 import {
+  fetchOwnVerificationNote,
   fetchRealCategories,
+  requestOwnProfessionalVerification,
   saveOwnProfessionalProfile,
+  switchOwnAccountToClient,
   type RealPortfolioPhoto,
   type RealServiceItem,
 } from "@/services/supabase/professionals";
@@ -33,12 +41,23 @@ import type { CategorySlug, CountryCode, ServiceCategory } from "@/types/domain"
 type ProTabId = "profile" | "services" | "portfolio" | "messages";
 
 export default function ProfessionalWorkspacePage() {
+  const router = useRouter();
   const { dictionary, locale, tText } = useLocale();
 
   const [activeTab, setActiveTab] = useState<ProTabId>("profile");
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [accountRole, setAccountRole] = useState<"client" | "professional" | "admin">("client");
+  const [isAccountSuspended, setIsAccountSuspended] = useState(false);
+  const [hasProfessionalProfile, setHasProfessionalProfile] = useState(false);
+  const [proProfileStatus, setProProfileStatus] = useState<"draft" | "published" | "suspended" | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<"unverified" | "pending" | "verified">("unverified");
+  const [verificationNoteInput, setVerificationNoteInput] = useState("");
+  const [savedVerificationNote, setSavedVerificationNote] = useState<string | null>(null);
+  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
+  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
+  const [isSwitchingToClient, setIsSwitchingToClient] = useState(false);
 
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
 
@@ -110,18 +129,21 @@ export default function ProfessionalWorkspacePage() {
       setAuthUserId(user.id);
       setAuthEmail(user.email ?? null);
 
-      const [profileRes, proProfileRes, servicesRes, photosRes] =
+      const [profileRes, proProfileRes, verificationNote, servicesRes, photosRes] =
         await Promise.all([
           supabase
             .from("profiles")
-            .select("id, full_name, country, city, avatar_url")
+            .select("id, role, is_suspended, full_name, country, city, avatar_url")
             .eq("id", user.id)
             .maybeSingle(),
           supabase
             .from("professional_profiles")
-            .select("*")
+            .select(
+              "slug, category_slug, primary_specialty_es_ar, primary_specialty_pt_br, secondary_specialties, bio, years_of_experience, neighborhood, coverage_zones, languages, schedule_summary, accepts_direct_contact, accepts_quote_requests, reference_starting_price, status, verification_status"
+            )
             .eq("user_id", user.id)
             .maybeSingle(),
+          fetchOwnVerificationNote(),
           supabase
             .from("services")
             .select("*")
@@ -135,6 +157,12 @@ export default function ProfessionalWorkspacePage() {
         ]);
 
       if (profileRes.data) {
+        const nextRole =
+          profileRes.data.role === "professional" || profileRes.data.role === "admin"
+            ? profileRes.data.role
+            : "client";
+        setAccountRole(nextRole);
+        setIsAccountSuspended(Boolean(profileRes.data.is_suspended));
         setFullName(String(profileRes.data.full_name ?? ""));
         const c = (profileRes.data.country as CountryCode) || "AR";
         setProCountry(c);
@@ -142,8 +170,14 @@ export default function ProfessionalWorkspacePage() {
         setAvatarUrl(String(profileRes.data.avatar_url ?? ""));
       }
 
+      setSavedVerificationNote(verificationNote);
+      if (verificationNote) {
+        setVerificationNoteInput(verificationNote);
+      }
+
       if (proProfileRes.data) {
         const pp = proProfileRes.data;
+        setHasProfessionalProfile(true);
         setSlug(String(pp.slug ?? ""));
         setCategorySlug(
           (pp.category_slug as CategorySlug) || "electricidad-y-gas"
@@ -170,7 +204,21 @@ export default function ProfessionalWorkspacePage() {
         setReferenceStartingPrice(
           pp.reference_starting_price ? String(pp.reference_starting_price) : ""
         );
-        setStatus(pp.status === "published" ? "published" : "draft");
+        const rawStatus =
+          pp.status === "published" || pp.status === "suspended"
+            ? pp.status
+            : "draft";
+        setProProfileStatus(rawStatus);
+        setStatus(rawStatus === "published" ? "published" : "draft");
+        const rawVerification =
+          pp.verification_status === "verified" || pp.verification_status === "pending"
+            ? pp.verification_status
+            : "unverified";
+        setVerificationStatus(rawVerification);
+      } else {
+        setHasProfessionalProfile(false);
+        setProProfileStatus(null);
+        setVerificationStatus("unverified");
       }
 
       setServices(
@@ -264,16 +312,22 @@ export default function ProfessionalWorkspacePage() {
         acceptsDirectContact,
         acceptsQuoteRequests,
         referenceStartingPrice: parsedPrice,
-        status,
+        status: canPublish ? status : "draft",
+        locale,
       });
 
       setSlug(saved.slug);
+      setHasProfessionalProfile(true);
+      if (accountRole === "client") {
+        setAccountRole("professional");
+      }
+      setProProfileStatus(canPublish ? status : "draft");
       setProfileFeedback({
         type: "success",
         message:
           locale === "es-AR"
-            ? "¡Perfil profesional guardado correctamente en Supabase!"
-            : "Perfil profissional salvo com sucesso no Supabase!",
+            ? "¡Perfil profesional guardado correctamente!"
+            : "Perfil profissional salvo com sucesso!",
       });
     } catch (err) {
       setProfileFeedback({
@@ -281,10 +335,105 @@ export default function ProfessionalWorkspacePage() {
         message:
           err instanceof Error
             ? err.message
-            : "No se pudo guardar el perfil profesional.",
+            : locale === "es-AR"
+              ? "No se pudo guardar el perfil profesional."
+              : "Não foi possível salvar o perfil profissional.",
       });
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const isBlocked = isAccountSuspended || proProfileStatus === "suspended";
+  const canPublish = !isBlocked && verificationStatus === "verified";
+
+  const handleRequestVerification = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    setProfileFeedback(null);
+
+    if (isBlocked) {
+      setProfileFeedback({
+        type: "error",
+        message:
+          locale === "es-AR"
+            ? "Tu cuenta o perfil está bloqueado y no puede solicitar verificación."
+            : "Sua conta ou perfil está bloqueado e não pode solicitar verificação.",
+      });
+      return;
+    }
+
+    if (verificationNoteInput.trim().length < 5) {
+      setProfileFeedback({
+        type: "error",
+        message:
+          locale === "es-AR"
+            ? "Ingresá al menos 5 caracteres con los datos de tu matrícula o documento."
+            : "Informe pelo menos 5 caracteres com os dados da sua matrícula ou documento.",
+      });
+      return;
+    }
+
+    setIsRequestingVerification(true);
+    try {
+      await requestOwnProfessionalVerification(verificationNoteInput, locale);
+      setVerificationStatus("pending");
+      setSavedVerificationNote(verificationNoteInput.trim());
+      setStatus("draft");
+      setProProfileStatus("draft");
+      setProfileFeedback({
+        type: "success",
+        message:
+          locale === "es-AR"
+            ? "Solicitud de verificación enviada. Nuestro equipo revisará tus datos antes de habilitar la publicación."
+            : "Solicitação de verificação enviada. Nossa equipe analisará seus dados antes de liberar a publicação.",
+      });
+    } catch (err) {
+      setProfileFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : locale === "es-AR"
+              ? "No se pudo enviar la solicitud de verificación."
+              : "Não foi possível enviar a solicitação de verificação.",
+      });
+    } finally {
+      setIsRequestingVerification(false);
+    }
+  };
+
+  const handleSwitchToClient = async () => {
+    setProfileFeedback(null);
+    setIsSwitchingToClient(true);
+    try {
+      await switchOwnAccountToClient(locale);
+      setAccountRole("client");
+      setStatus("draft");
+      setProProfileStatus("draft");
+      setShowSwitchConfirm(false);
+      setProfileFeedback({
+        type: "success",
+        message:
+          locale === "es-AR"
+            ? "Tu cuenta volvió a modo cliente y tu ficha profesional quedó oculta en borrador."
+            : "Sua conta voltou para o modo cliente e sua ficha profissional foi despublicada (mantida em rascunho).",
+      });
+      router.push("/cliente");
+      router.refresh();
+    } catch (err) {
+      setProfileFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : locale === "es-AR"
+              ? "No se pudo cambiar la cuenta a cliente."
+              : "Não foi possível converter a conta para cliente.",
+      });
+    } finally {
+      setIsSwitchingToClient(false);
     }
   };
 
@@ -588,6 +737,95 @@ export default function ProfessionalWorkspacePage() {
         {/* Contenido principal */}
         <section className="rounded-2xl border border-[#DFD8CC] bg-white p-6 shadow-2xs lg:col-span-9">
           {activeTab === "profile" && (
+            <div className="space-y-6">
+              {/* Banner de estado de verificação / bloqueio */}
+              <div
+                className={`rounded-xl border p-4 text-xs ${
+                  isBlocked
+                    ? "border-[#E5A49B] bg-[#FDF2F0] text-[#9F2D20]"
+                    : verificationStatus === "verified"
+                      ? "border-[#A7D7C2] bg-[#EAF5F0] text-[#176041]"
+                      : verificationStatus === "pending"
+                        ? "border-[#F2C794] bg-[#FFF8EE] text-[#8A4A0A]"
+                        : "border-[#DFD8CC] bg-[#F7F4EE] text-[#3D4249]"
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 font-bold">
+                    {isBlocked ? (
+                      <ShieldAlert className="h-4 w-4 shrink-0" />
+                    ) : verificationStatus === "verified" ? (
+                      <ShieldCheck className="h-4 w-4 shrink-0" />
+                    ) : verificationStatus === "pending" ? (
+                      <Clock className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-[#B66A16]" />
+                    )}
+                    <span>
+                      {isBlocked
+                        ? locale === "es-AR"
+                          ? "Perfil bloqueado / suspendido"
+                          : "Perfil bloqueado / suspenso"
+                        : verificationStatus === "verified"
+                          ? locale === "es-AR"
+                            ? "Verificación aprobada"
+                            : "Verificação aprovada"
+                          : verificationStatus === "pending"
+                            ? locale === "es-AR"
+                              ? "Verificación pendiente de revisión"
+                              : "Verificação pendente de análise"
+                            : locale === "es-AR"
+                              ? "Perfil no verificado"
+                              : "Perfil não verificado"}
+                    </span>
+                  </div>
+                  <Badge
+                    variant={
+                      isBlocked
+                        ? "graphite"
+                        : verificationStatus === "verified"
+                          ? "emerald"
+                          : verificationStatus === "pending"
+                            ? "orange"
+                            : "cream"
+                    }
+                  >
+                    {isBlocked
+                      ? locale === "es-AR"
+                        ? "Bloqueado"
+                        : "Bloqueado"
+                      : verificationStatus === "verified"
+                        ? locale === "es-AR"
+                          ? "Aprobado"
+                          : "Aprovado"
+                        : verificationStatus === "pending"
+                          ? locale === "es-AR"
+                            ? "Pendiente"
+                            : "Pendente"
+                          : locale === "es-AR"
+                            ? "No verificado"
+                            : "Não verificado"}
+                  </Badge>
+                </div>
+                <p className="mt-1.5 leading-relaxed">
+                  {isBlocked
+                    ? locale === "es-AR"
+                      ? "Tu cuenta o ficha profesional se encuentra suspendida. Las acciones de edición, verificación y cambio de rol están deshabilitadas."
+                      : "Sua conta ou ficha profissional está suspensa. As ações de edição, verificação e troca de papel estão desabilitadas."
+                    : verificationStatus === "verified"
+                      ? locale === "es-AR"
+                        ? "Tu identidad y matrícula fueron aprobadas. Ya podés publicar tu ficha en el directorio."
+                        : "Sua verificação foi aprovada. Você já pode publicar seu perfil no diretório."
+                      : verificationStatus === "pending"
+                        ? locale === "es-AR"
+                          ? "Recibimos tu solicitud de verificación. Mientras esté en análisis, tu ficha permanecerá en borrador."
+                          : "Recebemos sua solicitação de verificação. Enquanto estiver em análise, seu perfil permanecerá em rascunho."
+                        : locale === "es-AR"
+                          ? "Guardá tu perfil en borrador y enviá tus datos de verificación abajo para poder publicarlo en el directorio."
+                          : "Salve seu perfil em rascunho e envie seus dados de verificação abaixo para liberar a publicação no diretório."}
+                </p>
+              </div>
+
             <form onSubmit={handleSaveProfile} className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ECE6DC] pb-4">
                 <h2 className="text-lg font-bold text-[#24272B]">
@@ -604,21 +842,26 @@ export default function ProfessionalWorkspacePage() {
                   </label>
                   <select
                     id="pro-status"
-                    value={status}
+                    value={canPublish ? status : "draft"}
+                    disabled={isBlocked}
                     onChange={(e) =>
                       setStatus(e.target.value as "draft" | "published")
                     }
-                    className="rounded-lg border border-[#D4CCC0] bg-[#F7F4EE] px-3 py-1.5 text-xs font-bold text-[#24272B]"
+                    className="rounded-lg border border-[#D4CCC0] bg-[#F7F4EE] px-3 py-1.5 text-xs font-bold text-[#24272B] disabled:opacity-60"
                   >
                     <option value="draft">
                       {locale === "es-AR"
                         ? "Borrador (Oculto en directorio)"
                         : "Rascunho (Oculto no diretório)"}
                     </option>
-                    <option value="published">
+                    <option value="published" disabled={!canPublish}>
                       {locale === "es-AR"
-                        ? "Publicado (Visible en directorio)"
-                        : "Publicado (Visível no diretório)"}
+                        ? canPublish
+                          ? "Publicado (Visible en directorio)"
+                          : "Publicado (Requiere verificación aprobada)"
+                        : canPublish
+                          ? "Publicado (Visível no diretório)"
+                          : "Publicado (Exige verificação aprovada)"}
                     </option>
                   </select>
                 </div>
@@ -902,15 +1145,170 @@ export default function ProfessionalWorkspacePage() {
                 <Button
                   type="submit"
                   variant="primary"
+                  disabled={isBlocked}
                   isLoading={isSavingProfile}
                   leftIcon={<Save className="h-4 w-4" />}
                 >
                   {locale === "es-AR"
-                    ? "Guardar perfil profesional en Supabase"
-                    : "Salvar perfil profissional no Supabase"}
+                    ? "Guardar perfil profesional"
+                    : "Salvar perfil profissional"}
                 </Button>
               </div>
             </form>
+
+              {/* Solicitação de verificação profissional */}
+              <div className="rounded-2xl border border-[#DFD8CC] bg-[#F7F4EE]/70 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 text-base font-bold text-[#24272B]">
+                    <ShieldCheck className="h-4 w-4 text-[#F28C28]" />
+                    <span>
+                      {locale === "es-AR"
+                        ? "Verificación profesional"
+                        : "Verificação profissional"}
+                    </span>
+                  </h3>
+                  <span className="text-xs font-semibold text-[#525860]">
+                    {verificationStatus === "verified"
+                      ? locale === "es-AR"
+                        ? "Aprobada"
+                        : "Aprovada"
+                      : verificationStatus === "pending"
+                        ? locale === "es-AR"
+                          ? "En revisión"
+                          : "Em análise"
+                        : locale === "es-AR"
+                          ? "No enviada"
+                          : "Não enviada"}
+                  </span>
+                </div>
+
+                {verificationStatus === "verified" ? (
+                  <p className="mt-2 text-xs text-[#176041]">
+                    {locale === "es-AR"
+                      ? "Tu matrícula/documentación ya fue validada por el equipo de ManosPro."
+                      : "Sua matrícula/documentação já foi validada pela equipe ManosPro."}
+                  </p>
+                ) : (
+                  <form onSubmit={handleRequestVerification} className="mt-3 space-y-3">
+                    <p className="text-xs text-[#525860]">
+                      {locale === "es-AR"
+                        ? "Informá tu matrícula, registro profesional o referencia verificable (mínimo 5 caracteres). Esta información solo es visible para vos y el equipo de revisión."
+                        : "Informe sua matrícula, registro profissional ou referência verificável (mínimo 5 caracteres). Essa informação é visível apenas para você e a equipe de revisão."}
+                    </p>
+                    {savedVerificationNote && verificationStatus === "pending" && (
+                      <p className="rounded-lg border border-[#E6DFD3] bg-white px-3 py-2 text-xs text-[#3D4249]">
+                        <span className="font-bold">
+                          {locale === "es-AR" ? "Último envío: " : "Último envio: "}
+                        </span>
+                        {savedVerificationNote}
+                      </p>
+                    )}
+                    <textarea
+                      rows={3}
+                      value={verificationNoteInput}
+                      disabled={isBlocked || !hasProfessionalProfile || accountRole !== "professional"}
+                      onChange={(e) => setVerificationNoteInput(e.target.value)}
+                      placeholder={
+                        locale === "es-AR"
+                          ? "Ej: Matrícula ENARGAS #12345 / Registro profesional y ciudad de emisión"
+                          : "Ex: Registro CREA/CFT #12345 ou referência profissional verificável"
+                      }
+                      className="w-full rounded-xl border border-[#D4CCC0] bg-white p-3 text-sm disabled:opacity-60"
+                    />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        type="submit"
+                        variant="graphite"
+                        size="sm"
+                        disabled={isBlocked || !hasProfessionalProfile || accountRole !== "professional"}
+                        isLoading={isRequestingVerification}
+                        leftIcon={<ShieldCheck className="h-4 w-4" />}
+                      >
+                        {verificationStatus === "pending"
+                          ? locale === "es-AR"
+                            ? "Actualizar solicitud de verificación"
+                            : "Atualizar solicitação de verificação"
+                          : locale === "es-AR"
+                            ? "Solicitar verificación profesional"
+                            : "Solicitar verificação profissional"}
+                      </Button>
+                      {(!hasProfessionalProfile || accountRole !== "professional") && !isBlocked && (
+                        <span className="text-xs text-[#666C75]">
+                          {locale === "es-AR"
+                            ? "Guardá primero tu perfil en borrador para habilitar esta opción."
+                            : "Salve primeiro seu perfil em rascunho para habilitar esta opção."}
+                        </span>
+                      )}
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Transição de profissional para cliente */}
+              {accountRole === "professional" && (
+                <div className="rounded-2xl border border-[#DFD8CC] bg-white p-5">
+                  <h3 className="flex items-center gap-2 text-base font-bold text-[#24272B]">
+                    <UserMinus className="h-4 w-4 text-[#B93829]" />
+                    <span>
+                      {locale === "es-AR"
+                        ? "Volver a cuenta de cliente"
+                        : "Voltar para conta de cliente"}
+                    </span>
+                  </h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-[#525860]">
+                    {locale === "es-AR"
+                      ? "Tu ficha profesional será despublicada (se conserva el historial en borrador). Solo es posible si no tenés presupuestos ni servicios activos."
+                      : "Sua ficha profissional será despublicada (o histórico é mantido em rascunho). Só é possível quando não há orçamentos ou serviços ativos."}
+                  </p>
+
+                  {!showSwitchConfirm ? (
+                    <div className="mt-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isBlocked}
+                        leftIcon={<UserMinus className="h-4 w-4" />}
+                        onClick={() => setShowSwitchConfirm(true)}
+                      >
+                        {locale === "es-AR"
+                          ? "Cambiar a cuenta de cliente"
+                          : "Converter para conta de cliente"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#E5A49B] bg-[#FDF2F0] p-3">
+                      <span className="text-xs font-semibold text-[#9F2D20]">
+                        {locale === "es-AR"
+                          ? "¿Confirmás volver a cuenta de cliente y ocultar tu ficha profesional?"
+                          : "Confirma voltar para conta de cliente e despublicar sua ficha profissional?"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          disabled={isBlocked}
+                          isLoading={isSwitchingToClient}
+                          onClick={() => void handleSwitchToClient()}
+                        >
+                          {locale === "es-AR" ? "Sí, cambiar ahora" : "Sim, converter agora"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={isSwitchingToClient}
+                          onClick={() => setShowSwitchConfirm(false)}
+                        >
+                          {locale === "es-AR" ? "Cancelar" : "Cancelar"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {activeTab === "services" && (

@@ -42,7 +42,7 @@ type Report = {
 
 type Verification = {
   user_id: string; slug: string; verification_status: string; matricula_note: string | null;
-  created_at: string; profiles: { full_name: string; country: string; city: string } | { full_name: string; country: string; city: string }[] | null;
+  created_at: string; full_name: string; country: string; city: string;
 };
 
 type AuditItem = {
@@ -167,13 +167,12 @@ export function AdminPanel({ initialData }: { initialData: AdminPanelData }) {
   };
 
   const decideVerification = (request: Verification, approve: boolean) => {
-    const person = Array.isArray(request.profiles) ? request.profiles[0] : request.profiles;
     const note = window.prompt(approve
       ? "Descreva o documento ou critério conferido (mínimo 5 caracteres):"
       : "Registre o motivo para não aprovar a verificação (mínimo 5 caracteres):");
     if (!note || note.trim().length < 5) return;
     const action = approve ? "aprovar" : "recusar";
-    if (!window.confirm(`Confirmar ${action} a verificação de ${person?.full_name ?? "este profissional"}?`)) return;
+    if (!window.confirm(`Confirmar ${action} a verificação de ${request.full_name || "este profissional"}?`)) return;
     void runAction(`verify-${request.user_id}`, async () => {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.rpc("admin_decide_professional_verification", {
@@ -457,7 +456,7 @@ function UserDetails({ user, onClose }: { user: AdminUser; onClose: () => void }
 
 function VerificationQueue({ requests, busy, onDecide }: { requests: Verification[]; busy: string | null; onDecide: (request: Verification, approve: boolean) => void }) {
   if (requests.length === 0) return <EmptyState title="Nenhuma verificação pendente" detail="Quando um profissional enviar uma solicitação, ela aparecerá aqui para análise documentada." />;
-  return <div className="space-y-3">{requests.map((request) => { const person = Array.isArray(request.profiles) ? request.profiles[0] : request.profiles; return <article key={request.user_id} className="rounded-2xl border border-[#DDD7CC] bg-white p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex items-center gap-2"><BadgeCheck className="h-5 w-5 text-[#B66A16]" /><h2 className="font-bold text-[#24272B]">{person?.full_name ?? "Profissional"}</h2></div><p className="mt-1 text-sm text-[#626871]">{person?.city ?? "Localização não informada"}, {person?.country ?? ""} · Recebido em {new Date(request.created_at).toLocaleDateString("pt-BR")}</p></div><span className="rounded-full bg-[#FFF2DF] px-3 py-1 text-xs font-bold text-[#8A4A0A]">Aguardando análise</span></div><div className="mt-4 rounded-xl bg-[#F7F4EE] p-4"><p className="text-xs font-bold text-[#626871]">Informação enviada pelo profissional</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#42474F]">{request.matricula_note || "Nenhum detalhe enviado."}</p></div><div className="mt-4 flex flex-wrap justify-end gap-2"><button type="button" disabled={busy === `verify-${request.user_id}`} onClick={() => onDecide(request, false)} className="rounded-xl border border-[#D8D1C6] px-4 py-2.5 text-sm font-bold text-[#42474F] hover:border-[#B93829] hover:text-[#9F2D20] disabled:opacity-50">Recusar</button><button type="button" disabled={busy === `verify-${request.user_id}`} onClick={() => onDecide(request, true)} className="inline-flex items-center gap-2 rounded-xl bg-[#16805D] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#106B4D] disabled:opacity-50"><Check className="h-4 w-4" /> Aprovar</button></div></article>;})}</div>;
+  return <div className="space-y-3">{requests.map((request) => { return <article key={request.user_id} className="rounded-2xl border border-[#DDD7CC] bg-white p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex items-center gap-2"><BadgeCheck className="h-5 w-5 text-[#B66A16]" /><h2 className="font-bold text-[#24272B]">{request.full_name || "Profissional"}</h2></div><p className="mt-1 text-sm text-[#626871]">{request.city || "Localização não informada"}, {request.country} · Recebido em {new Date(request.created_at).toLocaleDateString("pt-BR")}</p></div><span className="rounded-full bg-[#FFF2DF] px-3 py-1 text-xs font-bold text-[#8A4A0A]">Aguardando análise</span></div><div className="mt-4 rounded-xl bg-[#F7F4EE] p-4"><p className="text-xs font-bold text-[#626871]">Informação enviada pelo profissional</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#42474F]">{request.matricula_note || "Nenhum detalhe enviado."}</p></div><div className="mt-4 flex flex-wrap justify-end gap-2"><button type="button" disabled={busy === `verify-${request.user_id}`} onClick={() => onDecide(request, false)} className="rounded-xl border border-[#D8D1C6] px-4 py-2.5 text-sm font-bold text-[#42474F] hover:border-[#B93829] hover:text-[#9F2D20] disabled:opacity-50">Recusar</button><button type="button" disabled={busy === `verify-${request.user_id}`} onClick={() => onDecide(request, true)} className="inline-flex items-center gap-2 rounded-xl bg-[#16805D] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#106B4D] disabled:opacity-50"><Check className="h-4 w-4" /> Aprovar</button></div></article>;})}</div>;
 }
 
 function ReportQueue({ reports, busy, onResolve }: { reports: Report[]; busy: string | null; onResolve: (report: Report, resolution: "resolved" | "dismissed") => void }) {

@@ -14,11 +14,14 @@ export default async function AccountPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/entrar?next=%2Fconta");
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, phone, country, city, avatar_url, created_at")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile, error }, { data: phone, error: phoneError }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, country, city, avatar_url, created_at")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase.rpc("get_own_phone"),
+  ]);
 
   return (
     <AccountSettings
@@ -26,18 +29,19 @@ export default async function AccountPage() {
         id: user.id,
         email: user.email ?? "",
         createdAt: user.created_at,
-        profile: profile
+        // Sem o telefone confirmado, salvar sobrescreveria o valor real com vazio.
+        profile: profile && !phoneError
           ? {
               id: profile.id,
               fullName: profile.full_name,
-              phone: profile.phone ?? "",
+              phone: typeof phone === "string" ? phone : "",
               country: profile.country as CountryCode,
               city: profile.city,
               avatarUrl: profile.avatar_url ?? "",
               createdAt: profile.created_at,
             }
           : null,
-        profileLoadFailed: Boolean(error),
+        profileLoadFailed: Boolean(error || phoneError),
       }}
     />
   );

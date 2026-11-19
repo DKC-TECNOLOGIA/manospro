@@ -18,7 +18,7 @@ export default async function AdminPage() {
       supabase.rpc("admin_list_users", { p_search: "", p_status: "all", p_page: 1, p_page_size: 20 }),
       supabase.from("categories").select("id,slug,icon_name,name_es_ar,name_pt_br,description_es_ar,description_pt_br,examples_es_ar,examples_pt_br,display_order,is_active").order("display_order"),
       supabase.from("moderation_reports").select("id,reporter_id,target_type,target_user_id,target_entity_id,reason,details,status,resolution_note,resolved_by,resolved_at,created_at").order("created_at", { ascending: false }).limit(30),
-      supabase.from("professional_profiles").select("user_id,slug,verification_status,matricula_note,created_at,profiles:profiles!professional_profiles_user_id_fkey(full_name,country,city)").eq("verification_status", "pending").order("created_at", { ascending: true }).limit(30),
+      supabase.rpc("admin_list_pending_verifications"),
       supabase.from("admin_audit_logs").select("id,action_type,target_type,target_id,summary,created_at").order("created_at", { ascending: false }).limit(12),
       supabase.rpc("admin_is_owner"),
       supabase.rpc("admin_list_members"),

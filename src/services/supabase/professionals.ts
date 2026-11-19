@@ -1,4 +1,4 @@
-import { createSupabaseBrowserClient } from "./client";
+import { createSupabaseBrowserClient, isSupabaseConfigured } from "./client";
 import type {
   CategorySlug,
   CountryCode,
@@ -564,6 +564,147 @@ export async function fetchRealProfessionalBySlug(
   };
 }
 
+export type UiLocale = "es-AR" | "pt-BR";
+
+/**
+ * Traduz erros vindos das RPCs do Supabase para mensagens amigáveis ao usuário,
+ * sem expor códigos internos do PostgreSQL, nomes de tabelas ou funções.
+ */
+export function mapProfessionalRpcError(
+  rawMessage: string | undefined,
+  locale: UiLocale = "pt-BR"
+): string {
+  const msg = (rawMessage ?? "").toLowerCase();
+  const isEs = locale === "es-AR";
+
+  if (msg.includes("sign in")) {
+    return isEs
+      ? "Tu sesión expiró. Iniciá sesión nuevamente para continuar."
+      : "Sua sessão expirou. Entre novamente para continuar.";
+  }
+  if (
+    msg.includes("suspended") ||
+    msg.includes("cannot create or edit") ||
+    msg.includes("reactivate")
+  ) {
+    return isEs
+      ? "Tu cuenta o perfil se encuentra suspendido y no puede modificarse en este momento."
+      : "Sua conta ou perfil está suspenso e não pode ser alterado no momento.";
+  }
+  if (msg.includes("complete your public name")) {
+    return isEs
+      ? "Completá tu nombre público, ciudad y especialidad principal."
+      : "Preencha seu nome público, cidade e especialidade principal.";
+  }
+  if (msg.includes("active service category")) {
+    return isEs
+      ? "Seleccioná una categoría de servicio activa."
+      : "Selecione uma categoria de serviço ativa.";
+  }
+  if (
+    msg.includes("start as a draft") ||
+    msg.includes("verification is required before publication") ||
+    msg.includes("verified professional can publish")
+  ) {
+    return isEs
+      ? "Tu perfil debe guardarse como borrador y contar con verificación aprobada antes de publicarse."
+      : "Seu perfil precisa ser salvo como rascunho e ter a verificação aprovada antes de ser publicado.";
+  }
+  if (msg.includes("at least five characters")) {
+    return isEs
+      ? "Ingresá al menos 5 caracteres con los datos de tu matrícula o habilitación."
+      : "Informe pelo menos 5 caracteres com os dados da sua matrícula ou documento.";
+  }
+  if (msg.includes("already verified")) {
+    return isEs
+      ? "Tu perfil profesional ya se encuentra verificado."
+      : "Seu perfil profissional já está verificado.";
+  }
+  if (
+    msg.includes("cannot request verification") ||
+    msg.includes("only an active professional")
+  ) {
+    return isEs
+      ? "Guardá primero tu perfil profesional en borrador para poder solicitar la verificación."
+      : "Salve primeiro seu perfil profissional em rascunho para solicitar a verificação.";
+  }
+  if (
+    msg.includes("close active quote") ||
+    msg.includes("complete or cancel active services")
+  ) {
+    return isEs
+      ? "Tenés presupuestos o servicios activos. Cerralos antes de cambiar a cuenta de cliente."
+      : "Você possui orçamentos ou serviços ativos. Encerre-os antes de mudar para conta de cliente.";
+  }
+  if (msg.includes("cannot change to client")) {
+    return isEs
+      ? "No es posible cambiar esta cuenta a cliente en este momento."
+      : "Não é possível converter esta conta para cliente no momento.";
+  }
+
+  return isEs
+    ? "No se pudo completar la operación. Intentá nuevamente en unos instantes."
+    : "Não foi possível concluir a operação. Tente novamente em instantes.";
+}
+
+/**
+ * Lê a nota de verificação do próprio profissional autenticado via RPC segura (Migration A),
+ * sem depender de SELECT direto na coluna protegida `matricula_note`.
+ */
+export async function fetchOwnVerificationNote(): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase.rpc("get_own_verification_note");
+  if (error) return null;
+  return typeof data === "string" ? data : null;
+}
+
+/**
+ * Envia solicitação de verificação profissional via RPC autenticada `request_professional_verification`.
+ */
+export async function requestOwnProfessionalVerification(
+  note: string,
+  locale: UiLocale = "pt-BR"
+): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    throw new Error(mapProfessionalRpcError("not configured", locale));
+  }
+
+  const cleanNote = note.trim();
+  if (cleanNote.length < 5) {
+    throw new Error(mapProfessionalRpcError("at least five characters", locale));
+  }
+
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase.rpc("request_professional_verification", {
+    matricula_or_document_note: cleanNote,
+  });
+
+  if (error) {
+    throw new Error(mapProfessionalRpcError(error.message, locale));
+  }
+}
+
+/**
+ * Converte a conta profissional autenticada de volta para cliente via RPC transacional
+ * `switch_own_account_to_client` (despublica a ficha preservando o histórico).
+ */
+export async function switchOwnAccountToClient(
+  locale: UiLocale = "pt-BR"
+): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    throw new Error(mapProfessionalRpcError("not configured", locale));
+  }
+
+  const supabase = createSupabaseBrowserClient();
+  const { error } = await supabase.rpc("switch_own_account_to_client");
+
+  if (error) {
+    throw new Error(mapProfessionalRpcError(error.message, locale));
+  }
+}
+
 export interface UpsertOwnProfessionalInput {
   fullName: string;
   country: CountryCode;
@@ -584,6 +725,7 @@ export interface UpsertOwnProfessionalInput {
   acceptsQuoteRequests: boolean;
   referenceStartingPrice: number | null;
   status: "draft" | "published";
+  locale?: UiLocale;
 }
 
 /**
@@ -593,6 +735,7 @@ export interface UpsertOwnProfessionalInput {
 export async function saveOwnProfessionalProfile(
   input: UpsertOwnProfessionalInput
 ): Promise<{ slug: string }> {
+  const uiLocale: UiLocale = input.locale ?? "pt-BR";
   const supabase = createSupabaseBrowserClient();
 
   const {
@@ -601,26 +744,7 @@ export async function saveOwnProfessionalProfile(
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    throw new Error("Debés iniciar sesión para guardar tu perfil profesional.");
-  }
-
-  const currency: CurrencyCode = input.country === "BR" ? "BRL" : "ARS";
-
-  // 1. Upsert en `public.profiles` (solo para el propio `user.id`)
-  const { error: profileErr } = await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      role: "professional",
-      full_name: input.fullName.trim(),
-      country: input.country,
-      city: input.city.trim(),
-      avatar_url: input.avatarUrl?.trim() ? input.avatarUrl.trim() : null,
-    },
-    { onConflict: "id" }
-  );
-
-  if (profileErr) {
-    throw new Error(profileErr.message);
+    throw new Error(mapProfessionalRpcError("sign in", uiLocale));
   }
 
   const normalizedSlug = input.slug
@@ -634,10 +758,13 @@ export async function saveOwnProfessionalProfile(
       ? normalizedSlug
       : `profesional-${user.id.slice(0, 8)}`;
 
-  // 2. Upsert en `public.professional_profiles`
-  const { error: proErr } = await supabase.from("professional_profiles").upsert(
-    {
-      user_id: user.id,
+  // Promotion and professional-profile save happen in one guarded database transaction.
+  const { data, error } = await supabase.rpc("save_own_professional_profile", {
+    p_profile: {
+      full_name: input.fullName.trim(),
+      country: input.country,
+      city: input.city.trim(),
+      avatar_url: input.avatarUrl?.trim() ? input.avatarUrl.trim() : null,
       slug: finalSlug,
       category_slug: input.categorySlug,
       primary_specialty_es_ar: input.primarySpecialtyEsAr.trim(),
@@ -656,15 +783,13 @@ export async function saveOwnProfessionalProfile(
         input.referenceStartingPrice && input.referenceStartingPrice > 0
           ? input.referenceStartingPrice
           : null,
-      currency,
       status: input.status,
     },
-    { onConflict: "user_id" }
-  );
+  });
 
-  if (proErr) {
-    throw new Error(proErr.message);
+  if (error) throw new Error(mapProfessionalRpcError(error.message, uiLocale));
+  if (typeof data !== "string") {
+    throw new Error(mapProfessionalRpcError(undefined, uiLocale));
   }
-
-  return { slug: finalSlug };
+  return { slug: data };
 }
