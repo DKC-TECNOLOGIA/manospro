@@ -12,10 +12,15 @@ const subscribeToMotionPreference = (callback: () => void) => {
   return () => query.removeEventListener("change", callback);
 };
 
-const getReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const getReducedMotion = () =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const getServerMotionPreference = () => false;
 
-export function MobileCategoryCarousel({ categories }: { categories: ServiceCategory[] }) {
+export function MobileCategoryCarousel({
+  categories,
+}: {
+  categories: ServiceCategory[];
+}) {
   const { locale, tText } = useLocale();
   const trackRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -50,7 +55,14 @@ export function MobileCategoryCarousel({ categories }: { categories: ServiceCate
   if (categories.length === 0) return null;
 
   return (
-    <div role="region" aria-label={locale === "es-AR" ? "Carrusel de categorías" : "Carrossel de categorias"} aria-roledescription="carousel" className="sm:hidden">
+    <div
+      role="region"
+      aria-label={
+        locale === "es-AR" ? "Carrusel de categorías" : "Carrossel de categorias"
+      }
+      aria-roledescription="carousel"
+      className="sm:hidden"
+    >
       <div
         ref={trackRef}
         onScroll={handleScroll}
@@ -64,16 +76,20 @@ export function MobileCategoryCarousel({ categories }: { categories: ServiceCate
           }
         }}
         tabIndex={0}
-        aria-label={locale === "es-AR" ? "Categorías de servicios" : "Categorias de serviços"}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] [&::-webkit-scrollbar]:hidden"
-        style={{ scrollBehavior: reducedMotion ? "auto" : "smooth", scrollbarWidth: "none", msOverflowStyle: "none" }}
+        aria-label={
+          locale === "es-AR"
+            ? "Categorías de servicios"
+            : "Categorias de serviços"
+        }
+        className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
+        style={{ scrollBehavior: reducedMotion ? "auto" : "smooth" }}
       >
         {categories.map((category, index) => (
           <div
             key={category.id}
             data-category-slide
             onFocusCapture={() => setActiveIndex(index)}
-            className="w-full min-w-0 shrink-0 snap-start"
+            className="w-[84%] min-w-0 shrink-0 snap-start"
             aria-roledescription="slide"
             aria-label={`${index + 1} de ${categories.length}`}
           >
@@ -83,26 +99,53 @@ export function MobileCategoryCarousel({ categories }: { categories: ServiceCate
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5" role="group" aria-label={locale === "es-AR" ? "Elegir categoría" : "Escolher categoria"}>
+        <div
+          className="flex items-center gap-1.5"
+          role="group"
+          aria-label={
+            locale === "es-AR" ? "Elegir categoría" : "Escolher categoria"
+          }
+        >
           {categories.map((category, index) => (
             <button
               key={category.id}
               type="button"
               onClick={() => moveTo(index)}
-              aria-label={`${locale === "es-AR" ? "Ver" : "Ver"} ${tText(category.name)}`}
+              aria-label={`Ver ${tText(category.name)}`}
               aria-current={index === activeIndex ? "true" : undefined}
-              className={`h-2.5 rounded-full transition-[width,background-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] ${index === activeIndex ? "w-6 bg-[#F28C28]" : "w-2.5 bg-[#B9B4AA] hover:bg-[#777D80]"}`}
+              className={`h-2 rounded-full transition-[width,background-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] ${
+                index === activeIndex
+                  ? "w-6 bg-[#F28C28]"
+                  : "w-2 bg-[#B9B4AA] hover:bg-[#777D80]"
+              }`}
             />
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <span aria-live="polite" className="min-w-10 text-center text-xs font-semibold tabular-nums text-[#565C64]">
-            {activeIndex + 1} / {categories.length}
+          <span
+            aria-live="polite"
+            className="min-w-10 text-center font-mono text-xs font-semibold text-[#565C64] tabular-nums"
+          >
+            {activeIndex + 1}/{categories.length}
           </span>
-          <button type="button" onClick={() => moveTo(activeIndex - 1)} aria-label={locale === "es-AR" ? "Categoría anterior" : "Categoria anterior"} className="grid h-9 w-9 place-items-center rounded-full border border-[#D8D0C2] bg-white text-[#24272B] transition hover:bg-[#EFEAE1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]">
+          <button
+            type="button"
+            onClick={() => moveTo(activeIndex - 1)}
+            aria-label={
+              locale === "es-AR" ? "Categoría anterior" : "Categoria anterior"
+            }
+            className="grid h-9 w-9 cursor-pointer place-items-center rounded-full border border-[#D8D0C2] bg-white text-[#24272B] transition hover:bg-[#EFEAE1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
+          >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </button>
-          <button type="button" onClick={() => moveTo(activeIndex + 1)} aria-label={locale === "es-AR" ? "Siguiente categoría" : "Próxima categoria"} className="grid h-9 w-9 place-items-center rounded-full border border-[#D8D0C2] bg-white text-[#24272B] transition hover:bg-[#EFEAE1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]">
+          <button
+            type="button"
+            onClick={() => moveTo(activeIndex + 1)}
+            aria-label={
+              locale === "es-AR" ? "Siguiente categoría" : "Próxima categoria"
+            }
+            className="grid h-9 w-9 cursor-pointer place-items-center rounded-full border border-[#D8D0C2] bg-white text-[#24272B] transition hover:bg-[#EFEAE1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
+          >
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>

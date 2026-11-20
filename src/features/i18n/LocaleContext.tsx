@@ -108,6 +108,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
+  useEffect(() => {
     if (isAuthLoading) return;
     if (lastUserIdRef.current !== userId) {
       lastUserIdRef.current = userId;

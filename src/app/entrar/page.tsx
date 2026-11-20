@@ -116,115 +116,162 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12 sm:px-6">
-      <div className="rounded-2xl border border-[#DFD8CC] bg-white p-6 shadow-xs sm:p-8">
-        <h1 className="text-2xl font-extrabold text-[#24272B]">
-          {dictionary.auth.loginTitle}
-        </h1>
-        <p className="mt-1.5 text-sm text-[#525860]">
-          {dictionary.auth.loginSubtitle}
-        </p>
-
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
+      <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-[#DFD8CC] bg-white shadow-sm lg:grid-cols-12">
+        <div className="hidden flex-col justify-between bg-[#24272B] p-8 text-[#F7F4EE] lg:col-span-5 lg:flex">
           <div>
-            <label
-              htmlFor="login-email"
-              className="mb-1.5 block text-xs font-bold text-[#24272B]"
-            >
-              {dictionary.auth.emailLabel}
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={dictionary.auth.emailPlaceholder}
-              className="h-11 w-full rounded-xl border border-[#D4CCC0] bg-white px-3.5 text-sm text-[#24272B] focus:border-[#F28C28] focus:outline-none"
-            />
+            <span className="inline-flex rounded-lg bg-[#F28C28]/15 px-2.5 py-1 text-xs font-bold text-[#F28C28]">
+              ManosPro
+            </span>
+            <h2 className="mt-4 text-2xl font-extrabold leading-tight text-white">
+              {locale === "es-AR"
+                ? "Conectá con profesionales verificados en tu zona"
+                : "Conecte-se com profissionais verificados na sua região"}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-[#CFCAC0]">
+              {locale === "es-AR"
+                ? "Gestioná tus consultas, presupuestos y conversaciones privadas desde un solo lugar."
+                : "Gerencie suas conversas, solicitações de orçamento e serviços em um só lugar."}
+            </p>
           </div>
-
-          <div>
-            <label
-              htmlFor="login-password"
-              className="mb-1.5 block text-xs font-bold text-[#24272B]"
-            >
-            {passwordRecovery ? (locale === "es-AR" ? "Te enviaremos un enlace seguro" : "Enviaremos um link seguro") : dictionary.auth.passwordLabel}
-            </label>
-            {!passwordRecovery && <input
-              id="login-password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={dictionary.auth.passwordPlaceholder}
-              className="h-11 w-full rounded-xl border border-[#D4CCC0] bg-white px-3.5 text-sm text-[#24272B] focus:border-[#F28C28] focus:outline-none"
-            />}
-          </div>
-
-          {errorMsg && (
-            <div
-              role="alert"
-              className="rounded-xl border border-[#E5A49B] bg-[#FDF2F0] p-3 text-xs font-semibold text-[#B93829]"
-            >
-              {errorMsg}
-            </div>
-          )}
-
-          {authSuccessMessage && (
-            <div
-              role="status"
-              className="rounded-xl border border-[#A7D7C2] bg-[#EAF5F0] p-3.5 text-xs text-[#176041]"
-            >
-              <p className="flex items-center gap-1.5 font-bold">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                {authSuccessMessage}
-              </p>
-              {!passwordRecovery && <div className="mt-2.5 flex flex-wrap gap-2">
-                <Link
-                  href="/cliente"
-                  className="rounded-lg bg-[#176041] px-2.5 py-1 font-semibold text-white"
-                >
-                  {dictionary.nav.clientArea}
-                </Link>
-                <Link
-                  href="/profissional"
-                  className="rounded-lg bg-[#24272B] px-2.5 py-1 font-semibold text-white"
-                >
-                  {dictionary.nav.proArea}
-                </Link>
-              </div>}
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full"
-            isLoading={isSubmitting}
-            leftIcon={<Lock className="h-4 w-4" />}
-          >
-            {passwordRecovery
-              ? (locale === "es-AR" ? "Enviar enlace" : "Enviar link")
-              : dictionary.nav.login}
-          </Button>
-          <button type="button" onClick={() => { setPasswordRecovery((current) => !current); setErrorMsg(null); setAuthSuccessMessage(null); }} className="w-full text-center text-xs font-semibold text-[#A75508] hover:underline">
-            {passwordRecovery
-              ? (locale === "es-AR" ? "Volver al inicio de sesión" : "Voltar para entrar")
-              : (locale === "es-AR" ? "Olvidé mi contraseña" : "Esqueci minha senha")}
-          </button>
-        </form>
-
-        <div className="mt-6 border-t border-[#ECE6DC] pt-4 text-center text-xs text-[#525860]">
-          <p className="mt-2">
-            {dictionary.auth.noAccountText}{" "}
-            <Link
-              href="/cadastro"
-              className="font-bold text-[#C86D14] hover:underline"
-            >
-              {dictionary.auth.goToRegister}
-            </Link>
+          <p className="border-t border-white/10 pt-4 text-xs text-[#B9B3A9]">
+            {locale === "es-AR"
+              ? "Argentina (ARS) · Brasil (BRL)"
+              : "Brasil (BRL) · Argentina (ARS)"}
           </p>
+        </div>
+
+        <div className="p-6 sm:p-8 lg:col-span-7">
+          <h1 className="text-2xl font-extrabold text-[#24272B]">
+            {dictionary.auth.loginTitle}
+          </h1>
+          <p className="mt-1.5 text-sm text-[#565C64]">
+            {dictionary.auth.loginSubtitle}
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+            <div>
+              <label
+                htmlFor="login-email"
+                className="mb-1.5 block text-xs font-bold text-[#24272B]"
+              >
+                {dictionary.auth.emailLabel}
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={dictionary.auth.emailPlaceholder}
+                className="h-11 w-full rounded-xl border border-[#CFC6B8] bg-white px-3.5 text-sm text-[#24272B] focus:border-[#F28C28] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/25"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="login-password"
+                className="mb-1.5 block text-xs font-bold text-[#24272B]"
+              >
+                {passwordRecovery
+                  ? locale === "es-AR"
+                    ? "Te enviaremos un enlace seguro"
+                    : "Enviaremos um link seguro"
+                  : dictionary.auth.passwordLabel}
+              </label>
+              {!passwordRecovery && (
+                <input
+                  id="login-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={dictionary.auth.passwordPlaceholder}
+                  className="h-11 w-full rounded-xl border border-[#CFC6B8] bg-white px-3.5 text-sm text-[#24272B] focus:border-[#F28C28] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/25"
+                />
+              )}
+            </div>
+
+            {errorMsg && (
+              <div
+                role="alert"
+                className="rounded-xl border border-[#E5A49B] bg-[#FDF2F0] p-3 text-xs font-semibold text-[#A62C1E]"
+              >
+                {errorMsg}
+              </div>
+            )}
+
+            {authSuccessMessage && (
+              <div
+                role="status"
+                className="rounded-xl border border-[#A7D7C2] bg-[#EAF5F0] p-3.5 text-xs text-[#15573B]"
+              >
+                <p className="flex items-center gap-1.5 font-bold">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  {authSuccessMessage}
+                </p>
+                {!passwordRecovery && (
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    <Link
+                      href="/cliente"
+                      className="rounded-lg bg-[#15573B] px-2.5 py-1 font-semibold text-white"
+                    >
+                      {dictionary.nav.clientArea}
+                    </Link>
+                    <Link
+                      href="/profissional"
+                      className="rounded-lg bg-[#24272B] px-2.5 py-1 font-semibold text-white"
+                    >
+                      {dictionary.nav.proArea}
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full"
+              isLoading={isSubmitting}
+              leftIcon={<Lock className="h-4 w-4" />}
+            >
+              {passwordRecovery
+                ? locale === "es-AR"
+                  ? "Enviar enlace"
+                  : "Enviar link"
+                : dictionary.nav.login}
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setPasswordRecovery((current) => !current);
+                setErrorMsg(null);
+                setAuthSuccessMessage(null);
+              }}
+              className="w-full cursor-pointer text-center text-xs font-bold text-[#A65206] hover:underline"
+            >
+              {passwordRecovery
+                ? locale === "es-AR"
+                  ? "Volver al inicio de sesión"
+                  : "Voltar para entrar"
+                : locale === "es-AR"
+                  ? "Olvidé mi contraseña"
+                  : "Esqueci minha senha"}
+            </button>
+          </form>
+
+          <div className="mt-6 border-t border-[#ECE6DC] pt-4 text-center text-xs text-[#565C64]">
+            <p className="mt-2">
+              {dictionary.auth.noAccountText}{" "}
+              <Link
+                href="/cadastro"
+                className="font-bold text-[#A65206] hover:underline"
+              >
+                {dictionary.auth.goToRegister}
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

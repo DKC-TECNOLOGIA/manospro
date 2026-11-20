@@ -68,6 +68,7 @@ export interface RealProfessionalListItem {
   referenceStartingPrice: number | null;
   currency: CurrencyCode;
   status: "draft" | "published" | "suspended";
+  isVerified: boolean;
   realReviewCount: number;
   realAverageRating: number | null;
   matchedServiceTitles: string[];
@@ -84,6 +85,7 @@ export interface DirectoryQueryFilters {
   categorySlug?: CategorySlug | "all";
   country?: CountryCode | "ALL";
   city?: string;
+  contactMode?: "all" | "direct" | "quote";
   sortBy?: "recent" | "experience" | "rating";
   page?: number;
   pageSize?: number;
@@ -166,6 +168,7 @@ interface RawProfessionalRow {
   reference_starting_price: number | string | null;
   currency: CurrencyCode;
   status: "draft" | "published" | "suspended";
+  verification_status?: "unverified" | "pending" | "verified" | "rejected";
   created_at: string;
   profiles: RawPublicProfileJoin | RawPublicProfileJoin[];
   services?: RawServiceJoin[];
@@ -314,6 +317,7 @@ function mapRawRowToListItem(row: RawProfessionalRow): RealProfessionalListItem 
     referenceStartingPrice: parsedPrice,
     currency: row.currency,
     status: row.status,
+    isVerified: row.verification_status === "verified",
     realReviewCount,
     realAverageRating,
     matchedServiceTitles: (row.services ?? []).map((s) => s.title),
@@ -341,20 +345,24 @@ export async function searchRealProfessionals(
   let matchedUserIdsFromNameOrService: string[] = [];
 
   if (searchTerm.length > 0) {
-    const safePattern = `%${searchTerm.replace(/[%_]/g, "")}%`;
+    const safePattern = `%${searchTerm.replace(/[%_,()]/g, "")}%`;
     const [nameMatchesRes, serviceMatchesRes] = await Promise.all([
       supabase
         .from("profiles")
         .select("id")
         .eq("is_suspended", false)
         .ilike("full_name", safePattern)
-        .limit(50),
+        .limit(200),
       supabase
         .from("services")
         .select("professional_id")
         .or(`title.ilike.${safePattern},description.ilike.${safePattern}`)
-        .limit(50),
+        .limit(200),
     ]);
+
+    if (nameMatchesRes.error || serviceMatchesRes.error) {
+      throw new Error("search_unavailable");
+    }
 
     const ids = new Set<string>();
     for (const row of nameMatchesRes.data ?? []) {
@@ -387,6 +395,7 @@ export async function searchRealProfessionals(
       reference_starting_price,
       currency,
       status,
+      verification_status,
       created_at,
       profiles:profiles!professional_profiles_user_id_fkey!inner(id, full_name, country, city, avatar_url, is_suspended),
       services(id, professional_id, title, description, reference_price_amount, currency, price_unit_label),
@@ -408,10 +417,16 @@ export async function searchRealProfessionals(
   }
 
   if (filters.city && filters.city !== "all") {
-    const cleanCity = filters.city.replace(/[%_]/g, "").trim();
+    const cleanCity = filters.city.replace(/[%_,()]/g, "").trim();
     if (cleanCity.length > 0) {
       queryBuilder = queryBuilder.ilike("profiles.city", `%${cleanCity}%`);
     }
+  }
+
+  if (filters.contactMode === "direct") {
+    queryBuilder = queryBuilder.eq("accepts_direct_contact", true);
+  } else if (filters.contactMode === "quote") {
+    queryBuilder = queryBuilder.eq("accepts_quote_requests", true);
   }
 
   if (searchTerm.length > 0) {
@@ -504,6 +519,7 @@ export async function fetchRealProfessionalBySlug(
       reference_starting_price,
       currency,
       status,
+      verification_status,
       created_at,
       profiles:profiles!professional_profiles_user_id_fkey!inner(id, full_name, country, city, avatar_url, is_suspended),
       services(id, professional_id, title, description, reference_price_amount, currency, price_unit_label),

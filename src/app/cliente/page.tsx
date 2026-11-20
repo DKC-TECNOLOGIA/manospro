@@ -74,8 +74,8 @@ function ClientAreaContent() {
         <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#F28C28]" />
         <p className="mt-3 text-sm font-semibold text-[#24272B]">
           {locale === "es-AR"
-            ? "Verificando sesión en Supabase..."
-            : "Verificando sessão no Supabase..."}
+            ? "Verificando sesión..."
+            : "Verificando sessão..."}
         </p>
       </div>
     );

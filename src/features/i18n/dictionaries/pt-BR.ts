@@ -75,13 +75,13 @@ export const ptBRDictionary: Dictionary = {
     title: "Como funciona o ManosPro",
     subtitle:
       "Um fluxo direto pensado para que clientes e profissionais autônomos combinem serviços sem burocracia.",
-    step1Title: "1. Busque por profissão e bairro",
+    step1Title: "Busque por profissão e bairro",
     step1Desc:
       "Filtre por especialidade, cidade ou região de atendimento e confira os serviços oferecidos.",
-    step2Title: "2. Escolha como contratar",
+    step2Title: "Escolha como contratar",
     step2Desc:
       "Inicie uma conversa direta pelo chat ou envie uma solicitação de orçamento detalhando o trabalho.",
-    step3Title: "3. Combine e avalie a experiência",
+    step3Title: "Combine e avalie a experiência",
     step3Desc:
       "Defina dias e horários diretamente com o especialista e registre sua avaliação após o serviço.",
     hiringModelsTitle: "Dois modelos de contratação desde o lançamento",
@@ -210,9 +210,12 @@ export const ptBRDictionary: Dictionary = {
       "O ManosPro conecta quem precisa contratar um serviço a profissionais autônomos do Brasil e da Argentina.",
     navigationTitle: "Explorar",
     areasTitle: "Para cada necessidade",
+    legalSectionTitle: "Legal e privacidade",
     legalTitle: "Informação clara",
-    privacyLink: "Privacidade e dados pessoais",
-    termsLink: "Termos de uso",
+    privacyLink: "Política de Privacidade",
+    termsLink: "Termos de Uso",
+    dataProtectionLink: "Proteção de Dados e LGPD",
+    cookiesLink: "Política de Cookies",
     verificationPolicy: "Política de verificação real",
     copyright: "ManosPro · Brasil e Argentina",
   },

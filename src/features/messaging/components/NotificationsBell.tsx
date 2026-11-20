@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, CheckCheck } from "lucide-react";
 import { useLocale } from "@/features/i18n/LocaleContext";
@@ -19,6 +19,8 @@ export function NotificationsBell() {
     InternalNotificationItem[]
   >([]);
   const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const popoverId = useId();
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -46,7 +48,24 @@ export function NotificationsBell() {
     return () => window.clearTimeout(timer);
   }, [loadNotifications]);
 
-  // Suscripción en tiempo real a nuevas notificaciones del usuario autenticado
+  useEffect(() => {
+    if (!isOpen) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (!userId) return;
     const supabase = createSupabaseBrowserClient();
@@ -113,38 +132,42 @@ export function NotificationsBell() {
   };
 
   return (
-    <div className="relative">
+    <div ref={rootRef} className="relative">
       <button
         type="button"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        aria-controls={popoverId}
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={
           locale === "es-AR" ? "Ver notificaciones" : "Ver notificações"
         }
-        className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-white/25 bg-white/5 text-white transition-colors hover:border-white/50 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
+        className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white transition-colors hover:border-white/45 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]"
       >
-        <Bell className="h-4 w-4 text-white" />
+        <Bell className="h-4 w-4 text-white" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F28C28] px-1 font-mono text-[10px] font-bold text-[#1B1E22]">
+          <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F28C28] px-1 font-mono text-[10px] font-bold text-[#1B1E22] tabular-nums">
             {unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-80 rounded-2xl border border-[#DFD8CC] bg-white p-4 shadow-lg">
+        <div
+          id={popoverId}
+          className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-[#DFD8CC] bg-white p-4 text-[#24272B] shadow-2xl"
+        >
           <div className="flex items-center justify-between border-b border-[#ECE6DC] pb-2.5">
             <span className="text-xs font-extrabold text-[#24272B]">
-              {locale === "es-AR"
-                ? "Notificaciones internas"
-                : "Notificações internas"}
+              {locale === "es-AR" ? "Notificaciones" : "Notificações"}
             </span>
             {unreadCount > 0 && (
               <button
                 type="button"
                 onClick={() => void handleMarkAllRead()}
-                className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-semibold text-[#C86D14] hover:underline"
+                className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-semibold text-[#A65206] hover:underline"
               >
-                <CheckCheck className="h-3.5 w-3.5" />
+                <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>
                   {locale === "es-AR" ? "Marcar leídas" : "Marcar lidas"}
                 </span>
@@ -154,7 +177,7 @@ export function NotificationsBell() {
 
           <div className="mt-2 max-h-72 divide-y divide-[#ECE6DC] overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="py-6 text-center text-xs text-[#666C75]">
+              <p className="py-6 text-center text-xs text-[#565C64]">
                 {locale === "es-AR"
                   ? "No tenés notificaciones pendientes."
                   : "Você não possui notificações pendentes."}
@@ -164,7 +187,7 @@ export function NotificationsBell() {
                 <div
                   key={n.id}
                   className={`py-2.5 text-xs ${
-                    n.readAt ? "opacity-65" : "font-semibold"
+                    n.readAt ? "opacity-70" : "font-semibold"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -173,14 +196,14 @@ export function NotificationsBell() {
                       <button
                         type="button"
                         onClick={() => void handleMarkOneRead(n.id)}
-                        className="shrink-0 cursor-pointer text-[10px] text-[#C86D14] hover:underline"
+                        className="shrink-0 cursor-pointer text-[10px] font-bold text-[#A65206] hover:underline"
                       >
                         {locale === "es-AR" ? "Leída" : "Lida"}
                       </button>
                     )}
                   </div>
                   {n.body && (
-                    <p className="mt-0.5 line-clamp-2 text-[#525860]">
+                    <p className="mt-0.5 line-clamp-2 text-[#565C64]">
                       {n.body}
                     </p>
                   )}
@@ -191,7 +214,7 @@ export function NotificationsBell() {
                         void handleMarkOneRead(n.id);
                         setIsOpen(false);
                       }}
-                      className="mt-1 inline-block text-[11px] font-bold text-[#C86D14] hover:underline"
+                      className="mt-1 inline-block text-[11px] font-bold text-[#A65206] hover:underline"
                     >
                       {locale === "es-AR"
                         ? "Abrir conversación"

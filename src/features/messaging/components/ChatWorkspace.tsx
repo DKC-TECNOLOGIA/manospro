@@ -836,8 +836,8 @@ export function ChatWorkspace({ initialConversationId }: ChatWorkspaceProps) {
                 <Clock className="h-3 w-3" />
                 <span>
                   {locale === "es-AR"
-                    ? "Las imágenes se almacenan en un bucket privado de Supabase Storage accesible únicamente por los participantes."
-                    : "As imagens são salvas em um bucket privado do Supabase Storage acessível apenas pelos participantes."}
+                    ? "Las imágenes se almacenan en un espacio privado accesible únicamente por los participantes."
+                    : "As imagens são salvas em um espaço privado acessível apenas pelos participantes."}
                 </span>
               </p>
             </form>

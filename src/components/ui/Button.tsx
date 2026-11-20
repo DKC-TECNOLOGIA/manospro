@@ -31,15 +31,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
       primary:
-        "bg-[#F28C28] text-[#1B1E22] font-semibold hover:bg-[#DF7B18] active:bg-[#C96C10] shadow-xs border border-[#DF7B18]/40",
+        "bg-[#F28C28] text-[#1B1E22] font-bold hover:bg-[#DF7B18] active:bg-[#C96C10] shadow-xs border border-[#DF7B18]/40",
       graphite:
         "bg-[#24272B] text-[#F7F4EE] font-semibold hover:bg-[#32363C] active:bg-[#191B1E] shadow-xs border border-[#24272B]",
       outline:
-        "bg-white text-[#24272B] font-medium border border-[#D5CEC2] hover:border-[#24272B] hover:bg-[#F7F4EE]/70 active:bg-[#EFEAE1]",
+        "bg-white text-[#24272B] font-semibold border border-[#CFC6B8] hover:border-[#24272B] hover:bg-[#F7F4EE]/80 active:bg-[#EFEAE1]",
       subtle:
-        "bg-[#EFEAE1] text-[#24272B] font-medium hover:bg-[#E4DDD2] active:bg-[#D8CFC1] border border-transparent",
+        "bg-[#EFEAE1] text-[#24272B] font-semibold hover:bg-[#E4DDD2] active:bg-[#D8CFC1] border border-transparent",
       ghost:
-        "bg-transparent text-[#24272B] font-medium hover:bg-[#EFEAE1]/80 active:bg-[#E4DDD2]",
+        "bg-transparent text-[#24272B] font-semibold hover:bg-[#EFEAE1]/90 active:bg-[#E4DDD2]",
     };
 
     const sizeStyles: Record<NonNullable<ButtonProps["size"]>, string> = {
@@ -55,9 +55,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={isDisabled}
         aria-busy={isLoading}
         className={cn(
-          "inline-flex items-center justify-center transition-colors duration-150 cursor-pointer select-none",
+          "inline-flex cursor-pointer select-none items-center justify-center transition-colors duration-150",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F4EE]",
-          "disabled:opacity-55 disabled:pointer-events-none disabled:cursor-not-allowed",
+          "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-55",
           variantStyles[variant],
           sizeStyles[size],
           className
@@ -65,7 +65,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden="true" />
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
         ) : (
           leftIcon && <span className="shrink-0">{leftIcon}</span>
         )}

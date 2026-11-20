@@ -3,19 +3,29 @@
 :root {
   --mp-graphite: #24272b;
   --mp-graphite-deep: #1b1e22;
+  --mp-graphite-hover: #32363c;
+  --mp-graphite-border: #363b42;
   --mp-orange: #f28c28;
   --mp-orange-hover: #df7b18;
+  --mp-orange-ink: #a65206;
+  --mp-orange-soft: #fef3e7;
   --mp-cream: #f7f4ee;
   --mp-cream-elevated: #efeae1;
   --mp-surface: #ffffff;
   --mp-border: #dfd8cc;
+  --mp-border-strong: #cfc6b8;
   --mp-muted: #565c64;
-  --mp-forest: #183f35;
-  --mp-forest-deep: #14372f;
-  --mp-forest-raised: #245448;
-  --mp-forest-border: #41685c;
-  --mp-on-forest: #f7f4ee;
-  --mp-muted-on-forest: #c6d2cc;
+  --mp-trust: #15573b;
+  --mp-trust-soft: #eaf5f0;
+  --mp-trust-border: #a7d7c2;
+  --mp-danger: #a62c1e;
+  --mp-danger-soft: #fdf2f0;
+  --mp-danger-border: #e5a49b;
+}
+
+@theme inline {
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html {
@@ -24,8 +34,8 @@ html {
 
 @keyframes hero-banner-enter {
   from {
-    opacity: 0.35;
-    transform: translateY(6px);
+    opacity: 0.45;
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -36,8 +46,18 @@ html {
 body {
   background-color: var(--mp-cream);
   color: var(--mp-graphite);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -109,8 +109,8 @@ export function AccountMenu({
         <div
           id={menuId}
           className={isMobile
-            ? "mt-2 rounded-xl border border-[var(--mp-forest-border)] bg-white p-2 text-[#24272B] shadow-lg"
-            : "absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-[#DFD8CC] bg-white p-2 text-[#24272B] shadow-xl"
+            ? "mt-2 rounded-xl border border-[#DFD8CC] bg-white p-2 text-[#24272B] shadow-lg"
+            : "absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-[#DFD8CC] bg-white p-2 text-[#24272B] shadow-2xl"
           }
         >
           <div className="flex items-center gap-2.5 border-b border-[#ECE6DC] px-3 py-2.5">

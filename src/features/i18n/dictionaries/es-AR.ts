@@ -73,13 +73,13 @@ export const esARDictionary = {
     title: "Cómo funciona ManosPro",
     subtitle:
       "Un flujo directo pensado para que clientes y trabajadores autónomos acuerden trabajos sin fricciones innecesarias.",
-    step1Title: "1. Buscá por oficio y barrio",
+    step1Title: "Buscá por oficio y barrio",
     step1Desc:
       "Filtrá por especialidad, ciudad o zona de atención y revisá qué servicios ofrece cada profesional.",
-    step2Title: "2. Elegí cómo contactar",
+    step2Title: "Elegí cómo contactar",
     step2Desc:
       "Iniciá una conversación directa por chat o enviá una solicitud de presupuesto detallando el trabajo.",
-    step3Title: "3. Acordá y calificá la experiencia",
+    step3Title: "Acordá y calificá la experiencia",
     step3Desc:
       "Coordiná días y horarios directamente con el especialista y compartí tu reseña al finalizar.",
     hiringModelsTitle: "Dos modalidades de contratación desde el lanzamiento",
@@ -208,9 +208,12 @@ export const esARDictionary = {
       "ManosPro conecta a personas que necesitan un servicio con profesionales independientes de Argentina y Brasil.",
     navigationTitle: "Explorar",
     areasTitle: "Para cada necesidad",
+    legalSectionTitle: "Legal y privacidad",
     legalTitle: "Información clara",
-    privacyLink: "Privacidad y datos personales",
-    termsLink: "Términos de uso",
+    privacyLink: "Política de Privacidad",
+    termsLink: "Términos de Uso",
+    dataProtectionLink: "Protección de Datos y LGPD",
+    cookiesLink: "Política de Cookies",
     verificationPolicy: "Política de verificación real",
     copyright: "ManosPro · Argentina y Brasil",
   },

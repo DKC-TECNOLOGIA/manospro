@@ -732,8 +732,8 @@ export default function ProfessionalWorkspacePage() {
         <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#F28C28]" />
         <p className="mt-3 text-sm font-semibold text-[#24272B]">
           {locale === "es-AR"
-            ? "Verificando sesión con Supabase Auth..."
-            : "Verificando sessão com Supabase Auth..."}
+            ? "Verificando tu cuenta profesional..."
+            : "Verificando sua conta profissional..."}
         </p>
       </div>
     );
@@ -747,10 +747,10 @@ export default function ProfessionalWorkspacePage() {
           <h1 className="mt-4 text-2xl font-extrabold text-[#24272B]">
             {dictionary.privateAreas.proTitle}
           </h1>
-          <p className="mt-2 text-sm text-[#525860]">
+          <p className="mt-2 text-sm text-[#565C64]">
             {locale === "es-AR"
-              ? "Para crear o editar tu perfil profesional y gestionar tus servicios en Supabase, primero ingresá con tu cuenta."
-              : "Para criar ou editar seu perfil profissional e gerenciar seus serviços no Supabase, entre primeiro com sua conta."}
+              ? "Para crear o editar tu perfil profesional y gestionar tus servicios, primero ingresá con tu cuenta."
+              : "Para criar ou editar seu perfil profissional e gerenciar seus serviços, entre primeiro com sua conta."}
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href="/entrar">

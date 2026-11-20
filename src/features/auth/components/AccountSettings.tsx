@@ -253,7 +253,7 @@ export function AccountSettings({ account }: { account: AccountData }) {
   const cardClass = "scroll-mt-28 rounded-2xl border border-[#DFD8CC] bg-white p-5 shadow-xs sm:p-7";
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
       <div className="mb-7 flex flex-col gap-4 border-b border-[#DFD8CC] pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-[#C86D14]">ManosPro</p>
@@ -375,6 +375,6 @@ export function AccountSettings({ account }: { account: AccountData }) {
           </section>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

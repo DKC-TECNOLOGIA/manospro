@@ -67,7 +67,7 @@ function RegisterFormContent() {
       </p>
     ) : null;
   };
-  const inputClass = "h-11 w-full rounded-xl border border-[#D4CCC0] bg-white px-3.5 text-sm text-[#24272B] outline-none transition focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/20";
+  const inputClass = "h-11 w-full rounded-xl border border-[#CFC6B8] bg-white px-3.5 text-sm text-[#24272B] outline-none transition focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/25";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -501,11 +501,11 @@ function RegisterFormContent() {
           </Button>
         </form>
 
-        <div className="mt-6 border-t border-[#ECE6DC] pt-4 text-center text-xs text-[#525860]">
+        <div className="mt-6 border-t border-[#ECE6DC] pt-4 text-center text-xs text-[#565C64]">
           {dictionary.auth.alreadyHaveAccount}{" "}
           <Link
             href="/entrar"
-            className="font-bold text-[#C86D14] hover:underline"
+            className="font-bold text-[#A65206] hover:underline"
           >
             {dictionary.nav.login}
           </Link>

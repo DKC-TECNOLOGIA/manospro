@@ -281,7 +281,7 @@ export function AdminPanel({ initialData }: { initialData: AdminPanelData }) {
             </button>
           </aside>
 
-          <main className="min-w-0">
+          <div className="min-w-0">
             <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-[#B66A16]">Administração da plataforma</p>
@@ -369,7 +369,7 @@ export function AdminPanel({ initialData }: { initialData: AdminPanelData }) {
 
             <p className="mt-6 flex items-start gap-2 text-xs leading-5 text-[#747A81]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#16805D]" aria-hidden="true" /> Cada ação de moderação, categoria ou verificação é validada no banco e registrada na trilha de auditoria.</p>
             {isPending && <span className="sr-only" role="status">Atualizando informações do painel</span>}
-          </main>
+          </div>
         </div>
       </div>
     </div>
