@@ -107,6 +107,85 @@ export function validateChatAttachmentFile(
   return { valid: true };
 }
 
+export type MessagingLocale = "es-AR" | "pt-BR";
+
+export class ConversationAuthError extends Error {
+  readonly code = "AUTH_REQUIRED" as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "ConversationAuthError";
+  }
+}
+
+export function isConversationAuthError(err: unknown): err is ConversationAuthError {
+  return (
+    err instanceof ConversationAuthError ||
+    (err instanceof Error &&
+      "code" in err &&
+      (err as { code?: unknown }).code === "AUTH_REQUIRED")
+  );
+}
+
+function isAuthErrorMessage(rawMessage: string | undefined, code?: string): boolean {
+  const msg = (rawMessage ?? "").toLowerCase();
+  return (
+    code === "PGRST301" ||
+    msg.includes("permission denied for function") ||
+    msg.includes("sign in") ||
+    msg.includes("jwt") ||
+    msg.includes("jws") ||
+    msg.includes("auth_required")
+  );
+}
+
+/**
+ * Traduz erros de autenticação e regras de negócio de `start_or_get_conversation`
+ * para mensagens claras ao usuário, sem expor códigos SQL ou detalhes internos.
+ */
+export function mapConversationRpcError(
+  rawMessage: string | undefined,
+  locale: MessagingLocale = "pt-BR"
+): string {
+  const msg = (rawMessage ?? "").toLowerCase();
+  const isEs = locale === "es-AR";
+
+  if (isAuthErrorMessage(rawMessage)) {
+    return isEs
+      ? "Tu sesión expiró o no iniciaste sesión. Ingresá nuevamente para iniciar una conversación."
+      : "Sua sessão expirou ou você não está autenticado. Entre novamente para iniciar uma conversa.";
+  }
+  if (msg.includes("choose another professional") || msg.includes("self_contact")) {
+    return isEs
+      ? "No podés iniciar una conversación con tu propio perfil."
+      : "Você não pode iniciar uma conversa com o seu próprio perfil.";
+  }
+  if (msg.includes("only client accounts can request a quote")) {
+    return isEs
+      ? "Solo las cuentas de cliente pueden solicitar presupuestos. Usá el mensaje directo si querés comunicarte."
+      : "Apenas contas de cliente podem solicitar orçamentos. Use a mensagem direta se quiser entrar em contato.";
+  }
+  if (msg.includes("not available for contact")) {
+    return isEs
+      ? "Este profesional no está disponible para recibir este tipo de contacto en este momento."
+      : "Este profissional não está disponível para receber este tipo de contato no momento.";
+  }
+  if (msg.includes("cannot start conversations")) {
+    return isEs
+      ? "Tu cuenta no tiene permiso para iniciar conversaciones en este momento."
+      : "Sua conta não pode iniciar conversas no momento.";
+  }
+  if (msg.includes("too long")) {
+    return isEs
+      ? "El mensaje inicial supera el límite permitido de 5.000 caracteres."
+      : "A mensagem inicial ultrapassa o limite permitido de 5.000 caracteres.";
+  }
+
+  return isEs
+    ? "No se pudo iniciar la conversación. Intentá nuevamente en unos instantes."
+    : "Não foi possível iniciar a conversa. Tente novamente em instantes.";
+}
+
 /**
  * Crea o reutiliza una conversación entre el usuario autenticado y otro usuario (`targetUserId`)
  * mediante la función RPC atómica `public.start_or_get_conversation`.
@@ -116,8 +195,24 @@ export async function startOrGetConversation(params: {
   subject: string;
   quoteStatus: QuoteStatusType;
   initialMessage?: string;
+  locale?: MessagingLocale;
 }): Promise<string> {
+  const locale = params.locale ?? "pt-BR";
   const supabase = createSupabaseBrowserClient();
+
+  // Valida/renova a sessão autenticada antes da RPC para nunca enviar a chamada como `anon`.
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new ConversationAuthError(mapConversationRpcError("auth_required", locale));
+  }
+
+  if (user.id === params.targetUserId) {
+    throw new Error(mapConversationRpcError("self_contact", locale));
+  }
 
   const { data, error } = await supabase.rpc("start_or_get_conversation", {
     target_user_id: params.targetUserId,
@@ -127,11 +222,19 @@ export async function startOrGetConversation(params: {
   });
 
   if (error) {
-    throw new Error(error.message);
+    const isAuthErr = isAuthErrorMessage(error.message, error.code);
+    const mapped = mapConversationRpcError(
+      isAuthErr ? "auth_required" : error.message,
+      locale
+    );
+    if (isAuthErr) {
+      throw new ConversationAuthError(mapped);
+    }
+    throw new Error(mapped);
   }
 
   if (!data) {
-    throw new Error("No se pudo obtener el identificador de la conversación.");
+    throw new Error(mapConversationRpcError(undefined, locale));
   }
 
   return String(data);

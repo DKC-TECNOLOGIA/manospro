@@ -14,7 +14,7 @@ import type { CountryCode } from "@/types/domain";
 
 export function SiteHeader() {
   const { country, currency, dictionary, locale, setCountry } = useLocale();
-  const { user, isLoading, isResolvingAccount, accountHref, isAdmin, signOut } = useAuth();
+  const { user, isLoading, isResolvingAccount, accountHref, isAdmin, avatarUrl, profileName, signOut } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -146,6 +146,8 @@ export function SiteHeader() {
               user={user}
               dashboardHref={accountHref}
               isAdmin={isAdmin}
+              avatarUrl={avatarUrl}
+              profileName={profileName}
               onSignOut={signOut}
             />
           ) : (
@@ -250,6 +252,8 @@ export function SiteHeader() {
                 user={user}
                 dashboardHref={accountHref}
                 isAdmin={isAdmin}
+                avatarUrl={avatarUrl}
+                profileName={profileName}
                 isMobile
                 onSignOut={signOut}
                 onNavigate={closeMobileMenu}

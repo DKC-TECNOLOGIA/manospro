@@ -39,6 +39,7 @@ export interface RealServiceItem {
 export interface RealPortfolioPhoto {
   id: string;
   professionalId: string;
+  storagePath?: string;
   publicUrl: string;
   caption: string;
   zoneLabel: string;

@@ -20,6 +20,9 @@ interface AuthContextValue {
   isResolvingAccount: boolean;
   accountHref: string | null;
   isAdmin: boolean;
+  avatarUrl: string | null;
+  profileName: string | null;
+  updateProfileAvatar: (nextUrl: string | null) => void;
   signOut: () => Promise<void>;
 }
 
@@ -32,6 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userId: string;
     href: string;
     isAdmin: boolean;
+    avatarUrl: string | null;
+    profileName: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -74,7 +79,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ? accountResolution.href
     : null;
   const isAdmin = Boolean(user && accountResolution?.userId === user.id && accountResolution.isAdmin);
+  const avatarUrl = user && accountResolution?.userId === user.id ? accountResolution.avatarUrl : null;
+  const profileName = user && accountResolution?.userId === user.id ? accountResolution.profileName : null;
   const isResolvingAccount = Boolean(user && !accountHref);
+
+  const updateProfileAvatar = useCallback(
+    (nextUrl: string | null) => {
+      if (!userId) return;
+      setAccountResolution((prev) =>
+        prev && prev.userId === userId
+          ? { ...prev, avatarUrl: nextUrl }
+          : {
+              userId,
+              href: prev?.href ?? "/cliente",
+              isAdmin: prev?.isAdmin ?? false,
+              avatarUrl: nextUrl,
+              profileName: prev?.profileName ?? null,
+            }
+      );
+    },
+    [userId]
+  );
 
   useEffect(() => {
     if (!userId) return;
@@ -83,30 +108,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const resolveAccount = async () => {
       const supabase = createSupabaseBrowserClient();
-      const { data: isAdmin } = await supabase.rpc("is_admin");
+      const [{ data: isAdmin }, { data: profile }] = await Promise.all([
+        supabase.rpc("is_admin"),
+        supabase
+          .from("profiles")
+          .select("role, full_name, avatar_url")
+          .eq("id", userId)
+          .maybeSingle(),
+      ]);
       if (!isActive) return;
+
+      const resolvedAvatar =
+        typeof profile?.avatar_url === "string" && profile.avatar_url.trim()
+          ? profile.avatar_url.trim()
+          : null;
+      const resolvedName =
+        typeof profile?.full_name === "string" && profile.full_name.trim()
+          ? profile.full_name.trim()
+          : null;
+
       if (isAdmin === true) {
-        setAccountResolution({ userId, href: "/admin", isAdmin: true });
+        setAccountResolution({
+          userId,
+          href: "/admin",
+          isAdmin: true,
+          avatarUrl: resolvedAvatar,
+          profileName: resolvedName,
+        });
         return;
       }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
-      if (!isActive) return;
 
       setAccountResolution({
         userId,
         href: profile?.role === "professional" ? "/profissional" : "/cliente",
         isAdmin: false,
+        avatarUrl: resolvedAvatar,
+        profileName: resolvedName,
       });
     };
 
     void resolveAccount().catch(() => {
       if (!isActive) return;
-      setAccountResolution({ userId, href: "/cliente", isAdmin: false });
+      setAccountResolution({
+        userId,
+        href: "/cliente",
+        isAdmin: false,
+        avatarUrl: null,
+        profileName: null,
+      });
     });
 
     return () => {
@@ -121,8 +170,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isLoading, isResolvingAccount, accountHref, isAdmin, signOut }),
-    [user, isLoading, isResolvingAccount, accountHref, isAdmin, signOut]
+    () => ({
+      user,
+      isLoading,
+      isResolvingAccount,
+      accountHref,
+      isAdmin,
+      avatarUrl,
+      profileName,
+      updateProfileAvatar,
+      signOut,
+    }),
+    [
+      user,
+      isLoading,
+      isResolvingAccount,
+      accountHref,
+      isAdmin,
+      avatarUrl,
+      profileName,
+      updateProfileAvatar,
+      signOut,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

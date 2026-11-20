@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -18,10 +18,14 @@ import {
   ShieldAlert,
   ShieldCheck,
   Trash2,
+  Upload,
   UserMinus,
   Wrench,
+  X,
 } from "lucide-react";
 import { useLocale } from "@/features/i18n/LocaleContext";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { ProfileAvatarUploader } from "@/features/auth/components/ProfileAvatarUploader";
 import { CITY_ZONES, formatRegionalCurrency } from "@/features/i18n/regions";
 import { createSupabaseBrowserClient } from "@/services/supabase/client";
 import {
@@ -33,6 +37,11 @@ import {
   type RealPortfolioPhoto,
   type RealServiceItem,
 } from "@/services/supabase/professionals";
+import {
+  deleteOwnPortfolioPhoto,
+  uploadOwnPortfolioPhoto,
+  validatePortfolioPhotoFile,
+} from "@/services/supabase/portfolioStorage";
 import { ChatWorkspace } from "@/features/messaging/components/ChatWorkspace";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -43,6 +52,7 @@ type ProTabId = "profile" | "services" | "portfolio" | "messages";
 export default function ProfessionalWorkspacePage() {
   const router = useRouter();
   const { dictionary, locale, tText } = useLocale();
+  const { updateProfileAvatar } = useAuth();
 
   const [activeTab, setActiveTab] = useState<ProTabId>("profile");
   const [isLoadingSession, setIsLoadingSession] = useState(true);
@@ -101,11 +111,24 @@ export default function ProfessionalWorkspacePage() {
   const [isSavingService, setIsSavingService] = useState(false);
 
   // Fotos registradas en `public.professional_photos`
+  const portfolioFileInputId = useId();
+  const portfolioFileInputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<RealPortfolioPhoto[]>([]);
-  const [newPhotoUrl, setNewPhotoUrl] = useState("");
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+  const [selectedPhotoPreview, setSelectedPhotoPreview] = useState<string | null>(null);
+  const [photoFeedback, setPhotoFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [newPhotoCaption, setNewPhotoCaption] = useState("");
   const [newPhotoZone, setNewPhotoZone] = useState("");
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (selectedPhotoPreview) URL.revokeObjectURL(selectedPhotoPreview);
+    };
+  }, [selectedPhotoPreview]);
 
   const proCurrency = proCountry === "BR" ? "BRL" : "ARS";
   const regionalCities = CITY_ZONES.filter((z) => z.country === proCountry);
@@ -239,6 +262,7 @@ export default function ProfessionalWorkspacePage() {
         (photosRes.data ?? []).map((p) => ({
           id: String(p.id),
           professionalId: String(p.professional_id),
+          storagePath: typeof p.storage_path === "string" ? p.storage_path : undefined,
           publicUrl: String(p.public_url),
           caption: String(p.caption ?? ""),
           zoneLabel: String(p.zone_label ?? ""),
@@ -592,60 +616,113 @@ export default function ProfessionalWorkspacePage() {
     }
   };
 
+  const clearSelectedPortfolioPhoto = () => {
+    if (selectedPhotoPreview) URL.revokeObjectURL(selectedPhotoPreview);
+    setSelectedPhotoFile(null);
+    setSelectedPhotoPreview(null);
+    if (portfolioFileInputRef.current) {
+      portfolioFileInputRef.current.value = "";
+    }
+  };
+
+  const handleSelectPortfolioPhoto = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setPhotoFeedback(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = validatePortfolioPhotoFile(file, locale);
+    if (!validation.valid) {
+      clearSelectedPortfolioPhoto();
+      setPhotoFeedback({ type: "error", message: validation.error });
+      return;
+    }
+
+    if (selectedPhotoPreview) URL.revokeObjectURL(selectedPhotoPreview);
+    setSelectedPhotoFile(file);
+    setSelectedPhotoPreview(URL.createObjectURL(file));
+  };
+
   const handleAddPhoto = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!authUserId || !newPhotoUrl.trim().startsWith("https://")) return;
+    setPhotoFeedback(null);
+    if (!authUserId) return;
+
+    if (!selectedPhotoFile) {
+      setPhotoFeedback({
+        type: "error",
+        message:
+          locale === "es-AR"
+            ? "Seleccioná una imagen JPEG, PNG o WebP antes de guardar."
+            : "Selecione uma imagem JPEG, PNG ou WebP antes de salvar.",
+      });
+      return;
+    }
 
     setIsSavingPhoto(true);
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase
-        .from("professional_photos")
-        .insert({
-          professional_id: authUserId,
-          storage_path: "external-url",
-          public_url: newPhotoUrl.trim(),
-          caption: newPhotoCaption.trim() || "Trabajo realizado",
-          zone_label: newPhotoZone.trim() || city,
-          work_year: new Date().getFullYear(),
-        })
-        .select()
-        .single();
+      const created = await uploadOwnPortfolioPhoto({
+        file: selectedPhotoFile,
+        caption: newPhotoCaption,
+        zoneLabel: newPhotoZone.trim() || city,
+        workYear: new Date().getFullYear(),
+        locale,
+      });
 
-      if (error) throw new Error(error.message);
-
-      if (data) {
-        setPhotos((prev) => [
-          {
-            id: String(data.id),
-            professionalId: String(data.professional_id),
-            publicUrl: String(data.public_url),
-            caption: String(data.caption ?? ""),
-            zoneLabel: String(data.zone_label ?? ""),
-            workYear: Number(data.work_year ?? 2026),
-          },
-          ...prev,
-        ]);
-        setNewPhotoUrl("");
-        setNewPhotoCaption("");
-        setNewPhotoZone("");
-      }
+      setPhotos((prev) => [created, ...prev]);
+      clearSelectedPortfolioPhoto();
+      setNewPhotoCaption("");
+      setNewPhotoZone("");
+      setPhotoFeedback({
+        type: "success",
+        message:
+          locale === "es-AR"
+            ? "Imagen del trabajo subida y guardada correctamente."
+            : "Imagem do trabalho enviada e salva com sucesso.",
+      });
+    } catch (err) {
+      setPhotoFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : locale === "es-AR"
+              ? "No se pudo subir la imagen del trabajo."
+              : "Não foi possível enviar a imagem do trabalho.",
+      });
     } finally {
       setIsSavingPhoto(false);
     }
   };
 
-  const handleDeletePhoto = async (photoId: string) => {
+  const handleDeletePhoto = async (photo: RealPortfolioPhoto) => {
     if (!authUserId) return;
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase
-      .from("professional_photos")
-      .delete()
-      .eq("id", photoId)
-      .eq("professional_id", authUserId);
-
-    if (!error) {
-      setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+    setPhotoFeedback(null);
+    try {
+      await deleteOwnPortfolioPhoto({
+        photoId: photo.id,
+        storagePath: photo.storagePath,
+        locale,
+      });
+      setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+      setPhotoFeedback({
+        type: "success",
+        message:
+          locale === "es-AR"
+            ? "Imagen eliminada de tu galería."
+            : "Imagem removida da sua galeria.",
+      });
+    } catch (err) {
+      setPhotoFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : locale === "es-AR"
+              ? "No se pudo eliminar la imagen."
+              : "Não foi possível remover a imagem.",
+      });
     }
   };
 
@@ -1209,16 +1286,16 @@ export default function ProfessionalWorkspacePage() {
                   />
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-[#24272B]">
-                    URL de foto de perfil (`https://...`)
-                  </label>
-                  <input
-                    type="url"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="h-10 w-full rounded-xl border border-[#D4CCC0] px-3 text-xs"
+                <div className="sm:col-span-3">
+                  <ProfileAvatarUploader
+                    currentAvatarUrl={avatarUrl || null}
+                    displayName={fullName || authEmail || "MP"}
+                    locale={locale}
+                    disabled={isBlocked}
+                    onAvatarChange={(nextUrl) => {
+                      setAvatarUrl(nextUrl ?? "");
+                      updateProfileAvatar(nextUrl);
+                    }}
                   />
                 </div>
               </div>
@@ -1551,10 +1628,23 @@ export default function ProfessionalWorkspacePage() {
                 </h2>
                 <p className="mt-1 text-xs text-[#525860]">
                   {locale === "es-AR"
-                    ? "Nota de seguridad de Supabase Storage: el proyecto aún no tiene un bucket público con políticas RLS de objetos configurado, por lo que la subida directa de archivos binarios permanece deshabilitada. Podés vincular imágenes HTTPS seguras en `public.professional_photos`."
-                    : "Nota de segurança do Supabase Storage: o projeto ainda não possui um bucket com políticas RLS de objetos configurado, portanto o upload direto de arquivos binários permanece desativado. Você pode vincular imagens HTTPS seguras em `public.professional_photos`."}
+                    ? "Subí fotos reales de tus trabajos desde tu dispositivo (JPEG, PNG o WebP, máximo 5 MB por imagen)."
+                    : "Envie fotos reais dos seus trabalhos diretamente do seu dispositivo (JPEG, PNG ou WebP, máximo 5 MB por imagem)."}
                 </p>
               </div>
+
+              {photoFeedback && (
+                <div
+                  role={photoFeedback.type === "error" ? "alert" : "status"}
+                  className={`rounded-xl border p-3.5 text-xs font-semibold ${
+                    photoFeedback.type === "error"
+                      ? "border-[#E5A49B] bg-[#FDF2F0] text-[#B93829]"
+                      : "border-[#A7D7C2] bg-[#EAF5F0] text-[#176041]"
+                  }`}
+                >
+                  {photoFeedback.message}
+                </div>
+              )}
 
               {photos.length > 0 && (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1567,6 +1657,7 @@ export default function ProfessionalWorkspacePage() {
                       <img
                         src={photo.publicUrl}
                         alt={photo.caption}
+                        loading="lazy"
                         className="h-40 w-full object-cover"
                       />
                       <div className="flex items-center justify-between p-3">
@@ -1581,7 +1672,7 @@ export default function ProfessionalWorkspacePage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => void handleDeletePhoto(photo.id)}
+                          onClick={() => void handleDeletePhoto(photo)}
                         >
                           <Trash2 className="h-4 w-4 text-[#B93829]" />
                         </Button>
@@ -1593,27 +1684,87 @@ export default function ProfessionalWorkspacePage() {
 
               <form
                 onSubmit={handleAddPhoto}
-                className="rounded-xl border border-[#DFD8CC] bg-[#F7F4EE]/50 p-4 space-y-3"
+                className="rounded-xl border border-[#DFD8CC] bg-[#F7F4EE]/50 p-4 space-y-4"
               >
                 <h3 className="text-sm font-bold text-[#24272B]">
                   {locale === "es-AR"
-                    ? "Vincular imagen de trabajo (HTTPS)"
-                    : "Vincular imagem de trabalho (HTTPS)"}
+                    ? "Subir imagen de trabajo"
+                    : "Enviar imagem de trabalho"}
                 </h3>
+
                 <input
-                  type="url"
-                  value={newPhotoUrl}
-                  onChange={(e) => setNewPhotoUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="h-10 w-full rounded-xl border border-[#D4CCC0] bg-white px-3 text-xs"
-                  required
+                  ref={portfolioFileInputRef}
+                  id={portfolioFileInputId}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  onChange={handleSelectPortfolioPhoto}
+                  disabled={isSavingPhoto || isBlocked}
+                  className="sr-only"
                 />
+
+                {selectedPhotoPreview ? (
+                  <div className="overflow-hidden rounded-xl border border-[#D8D0C2] bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={selectedPhotoPreview}
+                      alt={
+                        locale === "es-AR"
+                          ? "Vista previa de la imagen seleccionada"
+                          : "Pré-visualização da imagem selecionada"
+                      }
+                      className="h-48 w-full object-cover"
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-xs">
+                      <span className="truncate font-medium text-[#3D4249]">
+                        {selectedPhotoFile?.name}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={isSavingPhoto}
+                        onClick={() => {
+                          clearSelectedPortfolioPhoto();
+                          setPhotoFeedback(null);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[#E5A49B] bg-[#FDF2F0] px-2.5 py-1 text-xs font-semibold text-[#9F2D20] hover:bg-[#FCE6E2] disabled:opacity-60"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>
+                          {locale === "es-AR"
+                            ? "Quitar imagen"
+                            : "Remover imagem"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor={portfolioFileInputId}
+                    className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#D4CCC0] bg-white px-4 py-6 text-center transition-colors hover:border-[#F28C28] hover:bg-[#FFF8EE] ${
+                      isSavingPhoto || isBlocked ? "pointer-events-none opacity-60" : ""
+                    }`}
+                  >
+                    <Upload className="h-6 w-6 text-[#C86D14]" aria-hidden="true" />
+                    <span className="text-xs font-bold text-[#24272B]">
+                      {locale === "es-AR"
+                        ? "Seleccionar imagen desde el dispositivo"
+                        : "Selecionar imagem do dispositivo"}
+                    </span>
+                    <span className="text-[11px] text-[#666C75]">
+                      JPEG, PNG ou WebP · máx. 5 MB
+                    </span>
+                  </label>
+                )}
+
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <input
                     type="text"
                     value={newPhotoCaption}
                     onChange={(e) => setNewPhotoCaption(e.target.value)}
-                    placeholder="Descripción del trabajo"
+                    placeholder={
+                      locale === "es-AR"
+                        ? "Descripción del trabajo"
+                        : "Descrição do trabalho"
+                    }
                     className="h-10 rounded-xl border border-[#D4CCC0] bg-white px-3 text-sm"
                     required
                   />
@@ -1621,7 +1772,9 @@ export default function ProfessionalWorkspacePage() {
                     type="text"
                     value={newPhotoZone}
                     onChange={(e) => setNewPhotoZone(e.target.value)}
-                    placeholder="Barrio / Ciudad"
+                    placeholder={
+                      locale === "es-AR" ? "Barrio / Ciudad" : "Bairro / Cidade"
+                    }
                     className="h-10 rounded-xl border border-[#D4CCC0] bg-white px-3 text-sm"
                   />
                 </div>
@@ -1629,10 +1782,17 @@ export default function ProfessionalWorkspacePage() {
                   type="submit"
                   variant="graphite"
                   size="sm"
+                  disabled={!selectedPhotoFile || isBlocked}
                   isLoading={isSavingPhoto}
                   leftIcon={<Plus className="h-4 w-4" />}
                 >
-                  {locale === "es-AR" ? "Agregar foto" : "Adicionar foto"}
+                  {isSavingPhoto
+                    ? locale === "es-AR"
+                      ? "Subiendo imagen…"
+                      : "Enviando imagem…"
+                    : locale === "es-AR"
+                      ? "Subir y guardar foto"
+                      : "Enviar e salvar foto"}
                 </Button>
               </form>
             </div>

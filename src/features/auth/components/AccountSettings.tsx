@@ -8,6 +8,7 @@ import { z } from "zod";
 import { useLocale } from "@/features/i18n/LocaleContext";
 import { REGION_CONFIGS } from "@/features/i18n/regions";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { ProfileAvatarUploader } from "@/features/auth/components/ProfileAvatarUploader";
 import { createSupabaseBrowserClient } from "@/services/supabase/client";
 import type { CountryCode } from "@/types/domain";
 
@@ -34,15 +35,6 @@ const profileSchema = z.object({
   phone: z.string().trim().max(25).refine((value) => !value || /^[+\d().\s-]+$/.test(value)),
   country: z.enum(["AR", "BR"]),
   city: z.string().trim().min(2).max(120),
-  avatarUrl: z.string().trim().max(2048).refine((value) => {
-    if (!value) return true;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:";
-    } catch {
-      return false;
-    }
-  }),
 });
 
 function FeedbackMessage({ feedback }: { feedback: Feedback }) {
@@ -63,7 +55,7 @@ function FeedbackMessage({ feedback }: { feedback: Feedback }) {
 
 export function AccountSettings({ account }: { account: AccountData }) {
   const { locale, setCountry: saveCountryPreference } = useLocale();
-  const { accountHref, isAdmin } = useAuth();
+  const { accountHref, isAdmin, updateProfileAvatar } = useAuth();
   const router = useRouter();
   const isPortuguese = locale === "pt-BR";
   const { profile } = account;
@@ -167,7 +159,7 @@ export function AccountSettings({ account }: { account: AccountData }) {
   const handleProfileSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setProfileFeedback(null);
-    const parsed = profileSchema.safeParse({ fullName, phone, country, city, avatarUrl });
+    const parsed = profileSchema.safeParse({ fullName, phone, country, city });
     if (!parsed.success) {
       setProfileFeedback({ type: "error", message: copy.invalid });
       return;
@@ -193,7 +185,6 @@ export function AccountSettings({ account }: { account: AccountData }) {
           phone: parsed.data.phone || null,
           country: parsed.data.country,
           city: parsed.data.city,
-          avatar_url: parsed.data.avatarUrl || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id)
@@ -299,6 +290,19 @@ export function AccountSettings({ account }: { account: AccountData }) {
                 <p className="mt-1 text-sm text-[#565C64]">{copy.profileHelp}</p>
               </div>
             </div>
+            <div className="mb-6">
+              <ProfileAvatarUploader
+                currentAvatarUrl={avatarUrl || null}
+                displayName={fullName || email}
+                locale={locale}
+                disabled={!profile}
+                onAvatarChange={(nextUrl) => {
+                  setAvatarUrl(nextUrl ?? "");
+                  updateProfileAvatar(nextUrl);
+                  router.refresh();
+                }}
+              />
+            </div>
             <form onSubmit={handleProfileSave} className="space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className={labelClass}>{copy.fullName} <span className="text-[#C86D14]">*</span>
@@ -318,10 +322,6 @@ export function AccountSettings({ account }: { account: AccountData }) {
                   <span id="account-phone-hint" className="mt-1 block text-xs font-normal text-[#666C75]">{copy.internationalCode}: {REGION_CONFIGS[country].phonePrefix}</span>
                 </label>
               </div>
-              <label className={labelClass}>{copy.avatar}
-                <input className={inputClass} type="url" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} placeholder="https://" maxLength={2048} />
-                <span className="mt-1 block text-xs font-normal text-[#666C75]">{copy.avatarHelp}</span>
-              </label>
               <FeedbackMessage feedback={profileFeedback} />
               <button type="submit" disabled={isSavingProfile || !profile} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#F28C28] px-5 text-sm font-bold text-[#1B1E22] transition-colors hover:bg-[#DF7B18] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#24272B]">
                 {isSavingProfile ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />}

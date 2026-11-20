@@ -18,24 +18,20 @@ import {
   Star,
 } from "lucide-react";
 import { useLocale } from "@/features/i18n/LocaleContext";
+import { useAuth } from "@/features/auth/AuthProvider";
 import {
   fetchRealProfessionalBySlug,
   type RealProfessionalDetail,
 } from "@/services/supabase/professionals";
 import {
+  isConversationAuthError,
   startOrGetConversation,
   type QuoteStatusType,
 } from "@/services/supabase/messaging";
 import { formatRegionalCurrency } from "@/features/i18n/regions";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return "MP";
-  if (parts.length === 1) return (parts[0] ?? "MP").slice(0, 2).toUpperCase();
-  return `${parts[0]?.[0] ?? ""}${parts[parts.length - 1]?.[0] ?? ""}`.toUpperCase();
-}
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 export default function ProfessionalProfilePage({
   params,
@@ -45,6 +41,7 @@ export default function ProfessionalProfilePage({
   const { slug } = use(params);
   const router = useRouter();
   const { dictionary, formatDate, locale } = useLocale();
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   const [professional, setProfessional] =
     useState<RealProfessionalDetail | null>(null);
@@ -57,6 +54,7 @@ export default function ProfessionalProfilePage({
   const [messageInput, setMessageInput] = useState("");
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
+  const [contactRequiresLogin, setContactRequiresLogin] = useState(false);
 
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
@@ -202,21 +200,13 @@ export default function ProfessionalProfilePage({
             <div className="px-6 pb-6">
               <div className="-mt-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="flex items-end gap-4">
-                  {professional.avatarUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={professional.avatarUrl}
-                      alt={professional.fullName}
-                      className="h-22 w-22 rounded-2xl border-4 border-white object-cover bg-[#EFEAE1] shadow-sm"
-                    />
-                  ) : (
-                    <div
-                      aria-hidden="true"
-                      className="flex h-22 w-22 items-center justify-center rounded-2xl border-4 border-white bg-[#24272B] text-xl font-bold text-[#F28C28] shadow-sm"
-                    >
-                      {getInitials(professional.fullName)}
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={professional.avatarUrl}
+                    name={professional.fullName}
+                    size="xl"
+                    shape="rounded"
+                    className="rounded-2xl border-4 border-white shadow-sm"
+                  />
                   <div className="pb-1">
                     <h1 className="text-2xl font-extrabold text-[#24272B]">
                       {professional.fullName}
@@ -452,6 +442,52 @@ export default function ProfessionalProfilePage({
             )}
 
             {/* Botones para iniciar o reutilizar conversación privada o presupuesto */}
+            {isAuthLoading ? (
+              <div
+                className="mt-5 space-y-2.5"
+                aria-busy="true"
+                aria-label={
+                  locale === "es-AR"
+                    ? "Verificando sesión..."
+                    : "Verificando sessão..."
+                }
+              >
+                <div className="h-11 w-full animate-pulse rounded-xl bg-[#EFEAE1]" />
+                <div className="h-11 w-full animate-pulse rounded-xl bg-[#EFEAE1]" />
+              </div>
+            ) : user && user.id === professional.userId ? (
+              <p className="mt-5 rounded-xl border border-[#DFD8CC] bg-[#F7F4EE] p-3.5 text-xs font-medium text-[#525860]">
+                {locale === "es-AR"
+                  ? "Este es tu perfil público. Los clientes verán aquí los botones para contactarte."
+                  : "Este é o seu perfil público. Os clientes verão aqui os botões para entrar em contato com você."}
+              </p>
+            ) : !user ? (
+              <div className="mt-5 space-y-3 rounded-xl border border-[#DFD8CC] bg-[#F7F4EE] p-4 text-xs">
+                {contactError && contactRequiresLogin ? (
+                  <p role="alert" className="font-semibold text-[#B93829]">
+                    {contactError}
+                  </p>
+                ) : (
+                  <p className="font-semibold text-[#24272B]">
+                    {locale === "es-AR"
+                      ? "Iniciá sesión para enviar mensajes o solicitar presupuestos a este profesional."
+                      : "Entre na sua conta para enviar mensagens ou solicitar orçamentos a este profissional."}
+                  </p>
+                )}
+                <Link
+                  href={`/entrar?next=${encodeURIComponent(`/profissionais/${professional.slug}`)}`}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#F28C28] px-4 text-xs font-bold text-[#1B1E22] transition-colors hover:bg-[#DF7B18]"
+                >
+                  {contactRequiresLogin
+                    ? locale === "es-AR"
+                      ? "Iniciar sesión nuevamente"
+                      : "Entrar novamente"
+                    : locale === "es-AR"
+                      ? "Iniciar sesión para contactar"
+                      : "Entrar para entrar em contato"}
+                </Link>
+              </div>
+            ) : (
             <div className="mt-5 space-y-2.5">
               {professional.acceptsQuoteRequests && (
                 <Button
@@ -460,6 +496,7 @@ export default function ProfessionalProfilePage({
                   leftIcon={<FileText className="h-4 w-4" />}
                   onClick={() => {
                     setContactError(null);
+                    setContactRequiresLogin(false);
                     setContactMode("quote_requested");
                     if (!subjectInput) {
                       setSubjectInput(
@@ -481,6 +518,7 @@ export default function ProfessionalProfilePage({
                   leftIcon={<MessageSquare className="h-4 w-4" />}
                   onClick={() => {
                     setContactError(null);
+                    setContactRequiresLogin(false);
                     setContactMode("direct_chat");
                     if (!subjectInput) {
                       setSubjectInput(
@@ -495,12 +533,14 @@ export default function ProfessionalProfilePage({
                 </Button>
               )}
             </div>
+            )}
 
-            {contactMode && (
+            {contactMode && !isAuthLoading && user && user.id !== professional.userId && (
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setContactError(null);
+                  setContactRequiresLogin(false);
                   if (messageInput.trim().length < 5) {
                     setContactError(
                       locale === "es-AR"
@@ -516,9 +556,11 @@ export default function ProfessionalProfilePage({
                       subject: subjectInput,
                       quoteStatus: contactMode,
                       initialMessage: messageInput,
+                      locale,
                     });
                     router.push(`/cliente?conv=${convId}`);
                   } catch (err) {
+                    setContactRequiresLogin(isConversationAuthError(err));
                     setContactError(
                       err instanceof Error
                         ? err.message
@@ -566,7 +608,19 @@ export default function ProfessionalProfilePage({
                   required
                 />
                 {contactError && (
-                  <p className="font-semibold text-[#B93829]">{contactError}</p>
+                  <div className="space-y-2" role="alert">
+                    <p className="font-semibold text-[#B93829]">{contactError}</p>
+                    {contactRequiresLogin && (
+                      <Link
+                        href={`/entrar?next=${encodeURIComponent(`/profissionais/${professional.slug}`)}`}
+                        className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-[#F28C28] px-3 text-xs font-bold text-[#1B1E22] transition-colors hover:bg-[#DF7B18]"
+                      >
+                        {locale === "es-AR"
+                          ? "Iniciar sesión nuevamente"
+                          : "Entrar novamente"}
+                      </Link>
+                    )}
+                  </div>
                 )}
                 <div className="flex gap-2">
                   <Button

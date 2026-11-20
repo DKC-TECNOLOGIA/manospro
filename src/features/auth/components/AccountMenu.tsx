@@ -6,11 +6,14 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, Shield, UserCircle2 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { useLocale } from "@/features/i18n/LocaleContext";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface AccountMenuProps {
   user: User;
   dashboardHref: string | null;
   isAdmin: boolean;
+  avatarUrl?: string | null;
+  profileName?: string | null;
   isMobile?: boolean;
   onSignOut: () => Promise<void>;
   onNavigate?: () => void;
@@ -20,6 +23,8 @@ export function AccountMenu({
   user,
   dashboardHref,
   isAdmin,
+  avatarUrl = null,
+  profileName = null,
   isMobile = false,
   onSignOut,
   onNavigate,
@@ -88,7 +93,13 @@ export function AccountMenu({
         }
       >
         <span className="inline-flex min-w-0 items-center gap-2">
-          <UserCircle2 className="h-4 w-4 shrink-0 text-[var(--mp-muted-on-forest)]" aria-hidden="true" />
+          <UserAvatar
+            src={avatarUrl}
+            name={profileName || user.email}
+            size="xs"
+            shape="circle"
+            className="border-white/30"
+          />
           <span>{isPortuguese ? "Minha conta" : "Mi cuenta"}</span>
         </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -102,8 +113,19 @@ export function AccountMenu({
             : "absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-[#DFD8CC] bg-white p-2 text-[#24272B] shadow-xl"
           }
         >
-          <div className="truncate border-b border-[#ECE6DC] px-3 py-2.5 text-xs text-[#565C64]">
-            {user.email}
+          <div className="flex items-center gap-2.5 border-b border-[#ECE6DC] px-3 py-2.5">
+            <UserAvatar
+              src={avatarUrl}
+              name={profileName || user.email}
+              size="sm"
+              shape="circle"
+            />
+            <div className="min-w-0">
+              {profileName && (
+                <p className="truncate text-xs font-bold text-[#24272B]">{profileName}</p>
+              )}
+              <p className="truncate text-xs text-[#565C64]">{user.email}</p>
+            </div>
           </div>
           <nav aria-label={isPortuguese ? "Opções da conta" : "Opciones de la cuenta"} className="py-1">
             <Link href="/conta" onClick={closeMenu} className={itemClass}>

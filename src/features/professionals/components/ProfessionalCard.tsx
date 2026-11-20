@@ -11,18 +11,12 @@ import {
 } from "lucide-react";
 import { useLocale } from "@/features/i18n/LocaleContext";
 import { Badge } from "@/components/ui/Badge";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { formatRegionalCurrency } from "@/features/i18n/regions";
 import type { RealProfessionalListItem } from "@/services/supabase/professionals";
 
 interface ProfessionalCardProps {
   professional: RealProfessionalListItem;
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return "MP";
-  if (parts.length === 1) return (parts[0] ?? "MP").slice(0, 2).toUpperCase();
-  return `${parts[0]?.[0] ?? ""}${parts[parts.length - 1]?.[0] ?? ""}`.toUpperCase();
 }
 
 export function ProfessionalCard({ professional }: ProfessionalCardProps) {
@@ -75,22 +69,12 @@ export function ProfessionalCard({ professional }: ProfessionalCardProps) {
 
         {/* Identidad del profesional */}
         <div className="flex items-start gap-3.5">
-          {professional.avatarUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={professional.avatarUrl}
-              alt={professional.fullName}
-              className="h-15 w-15 shrink-0 rounded-xl object-cover border border-[#E4DDD2] bg-[#EFEAE1]"
-              loading="lazy"
-            />
-          ) : (
-            <div
-              aria-hidden="true"
-              className="flex h-15 w-15 shrink-0 items-center justify-center rounded-xl border border-[#E4DDD2] bg-[#24272B] font-bold text-[#F28C28]"
-            >
-              {getInitials(professional.fullName)}
-            </div>
-          )}
+          <UserAvatar
+            src={professional.avatarUrl}
+            name={professional.fullName}
+            size="md"
+            shape="rounded"
+          />
 
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-lg font-bold text-[#24272B] group-hover:text-[#C86D14] transition-colors">
